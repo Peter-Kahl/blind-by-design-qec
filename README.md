@@ -4,7 +4,6 @@
   <img
     src="assets/blind-by-design-qec-2.jpg"
     alt="Blind by Design: schematic representation of a constrained measurement interface, quantum error-correction structure, and observable records."
-    width="600"
   >
 </p>
 
