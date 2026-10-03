@@ -1,0 +1,7 @@
+# Runtime dependency of three_detector.py.
+# Any NumPy providing numpy.random.default_rng (1.17 or later) should run it.
+numpy>=1.17
+
+# Reference run (output/three_detector_output.txt) was produced with:
+#   Python 3.12.3, NumPy 2.4.4
+# For exact textual reproduction, use those versions.
