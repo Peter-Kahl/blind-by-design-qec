@@ -367,7 +367,7 @@ The software is provided ‘as is’, without warranty of any kind, as specified
 
 ## Author
 
-**Peter Kahl**
+**Peter Kahl**\
 Independent Researcher, Lex et Ratio\
 ORCID: [0009-0003-1616-4843](https://orcid.org/0009-0003-1616-4843)\
 [www.lexetratio.com](https://www.lexetratio.com)
