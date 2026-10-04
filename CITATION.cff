@@ -1,0 +1,53 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below. If you use the theoretical argument, please also cite the accompanying paper."
+title: "Blind by Design: Computational Supplement"
+type: software
+authors:
+  - family-names: "Kahl"
+    given-names: "Peter"
+    affiliation: "Independent researcher, Lex et Ratio"
+    orcid: "https://orcid.org/0009-0003-1616-4843"
+version: "0.1.0"
+date-released: "2026-10-04"
+repository-code: "https://github.com/Peter-Kahl/blind-by-design-qec"
+url: "https://www.lexetratio.com"
+license: MIT
+abstract: >-
+  Computational supplement to 'Blind by Design: Quantum Error Correction,
+  Functional Incompatibility and the Value of Evidence' (Lex et Ratio Working
+  Paper LXR-2026-PHI-BBDQEC-WP). Four scripts: a three-qubit repetition-code
+  instrument showing observation-relative and function-relative blindness; an
+  independent numerical check of a toric-code sign-symmetry result (Özgüler
+  2026, Proposition 1); a construction audit of Stim/PyMatching surface-code
+  simulations; and a continuous error-correction simulation in which a
+  misspecified detector efficiency is detected and repaired from the records
+  already held. Includes reference outputs and a reliance note.
+keywords:
+  - "quantum error correction"
+  - "functional incompatibility"
+  - "value of evidence"
+  - "syndrome measurement"
+  - "detector error models"
+  - "model misspecification"
+  - "continuous measurement"
+  - "philosophy of science"
+references:
+  - type: report
+    title: "Blind by Design: Quantum Error Correction, Functional Incompatibility and the Value of Evidence"
+    authors:
+      - family-names: "Kahl"
+        given-names: "Peter"
+        orcid: "https://orcid.org/0009-0003-1616-4843"
+    year: 2026
+    institution:
+      name: "Lex et Ratio"
+    collection-title: "Lex et Ratio Working Papers"
+    number: "LXR-2026-PHI-BBDQEC-WP"
+    version: "1.0"
+  - type: article
+    title: "Securing quantum error correction against misleading advice from AI agents"
+    authors:
+      - family-names: "Özgüler"
+        given-names: "A. B."
+    year: 2026
+    url: "https://arxiv.org/abs/2609.19090"

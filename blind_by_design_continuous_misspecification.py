@@ -4,73 +4,92 @@
 blind_by_design_continuous_misspecification.py
 ==============================================
 
-Supplementary simulation for:
+Version:
+    0.1.0 (2026-10-04)
 
-    Peter Kahl, "Blind by Design: Quantum Error Correction, Functional
-    Incompatibility and the Value of Evidence" (2026), §6.4.
+Supplementary research code for:
 
-Author
-------
-Peter Kahl
-Independent Researcher, Lex et Ratio
-https://www.lexetratio.com
-ORCID: 0009-0003-1616-4843
+    Peter Kahl, 'Blind by Design: Quantum Error Correction, Functional
+    Incompatibility and the Value of Evidence' (2026), §6.4.2.
+
+Author:
+    Peter Kahl
+    Independent researcher, Lex et Ratio
+    https://www.lexetratio.com
+    ORCID: 0009-0003-1616-4843
+
+Repository:
+    https://github.com/Peter-Kahl/blind-by-design-qec
+
+Copyright (c) 2026 Peter Kahl. MIT License (see LICENSE).
+SPDX-License-Identifier: MIT
 
 Purpose
 -------
-Demonstrate model-relative blindness in continuous quantum error correction and
-show that it can be remedied using information already present in the
-measurement record.
+Demonstrate model-relative blindness in continuous quantum error correction,
+and its remedy using information already present in the measurement record.
 
 System
 ------
-A three-qubit bit-flip code. Each physical qubit suffers bit flips at rate
-``gamma``. The stabilisers S1 = Z1 Z2 and S2 = Z2 Z3 are measured continuously
-with strength ``kappa`` and true detector efficiency ``eta_true``. With no
-feedback, the syndrome sector is a classical continuous-time Markov chain and
-measurement increments are modelled as
+The three-qubit bit-flip code. Each physical qubit flips at rate gamma. The
+stabilisers S1 = Z1 Z2 and S2 = Z2 Z3 are measured continuously with strength
+kappa and true detector efficiency eta_true. With no feedback, the syndrome
+sector is a classical continuous-time Markov chain (each sector moves to each
+of the other three at rate gamma), and each record increment is
 
-    dQ_k = 2 eta kappa s_k dt + dW_k.
+    dQ_k = 2 eta kappa s_k dt + dW_k
 
-See Ahn, Doherty and Landahl (2002) and van Handel and Mabuchi (2005).
+(Ahn, Doherty and Landahl 2002; van Handel and Mabuchi 2005). With no feedback
+the problem is a classical one: tracking a hidden Markov chain from noisy
+observations whose strength the controller may misjudge.
 
 Controller and tests
 --------------------
-A Wonham filter tracks the four syndrome sectors while assuming an efficiency
-``eta_hat``. The script asks two questions.
+A Wonham filter over the four syndrome sectors tracks the syndrome while
+assuming an efficiency eta_hat, evaluated on a grid of candidate values.
 
-1. Detection: can misspecification be detected from the record already held?
-   The diagnostic is a normalised correlation between the innovation and the
-   predicted syndrome. Under the correctly specified filter the innovation has
-   zero conditional mean, so the statistic Z is approximately standard normal.
-2. Remedy: can eta be re-estimated by maximum likelihood from the same records,
-   and does using that estimate improve syndrome tracking?
+1. Detection. The statistic Z is the normalised correlation between the
+   innovations (observed minus predicted increments) and the predicted
+   stabiliser values. Under a correctly specified model the innovations have
+   zero conditional mean, so Z behaves approximately like a standard normal
+   variable. That is checked empirically here, not derived.
+2. Remedy. eta is re-estimated by maximum likelihood over the grid from the
+   same records, and the filter is rerun retrospectively on those records with
+   the re-estimated value. No new evidence is acquired.
+
+Notes
+-----
+Tracking error is the fraction of time steps at which the filter's
+maximum-a-posteriori sector differs from the true sector. Both default
+durations use the same seed, so the T = 5 records are the first 1,000 steps of
+the T = 25 records; the two rows are not independent replications.
+
+The default parameters reproduce §6.4.2 of the paper. The parameter-
+sensitivity figures quoted there (kappa = 1) are reproduced by
+
+    python blind_by_design_continuous_misspecification.py --kappa 1
 
 Requirements
 ------------
-Python 3.10+ and NumPy.
+Python 3.8 or later; NumPy 1.17 or later.
 
 Run
 ---
-    python blind_by_design_continuous_misspecification.py
+    python blind_by_design_continuous_misspecification.py [options]
 
-The random seed and all default simulation parameters are fixed below for
-reproducibility.
-
-Licence
--------
-MIT License. See LICENSE in the repository root.
-SPDX-License-Identifier: MIT
-
-Copyright (c) 2026 Peter Kahl.
+Use --help for the options.
 """
 
 from __future__ import annotations
 
+import argparse
 import platform
 import time
 
 import numpy as np
+
+SCRIPT_VERSION = "0.1.0"
+ETA_GRID = np.round(np.arange(0.1, 1.51, 0.05), 3)
 
 
 # Sector order: code (+,+), X1 (-,+), X2 (-,-), X3 (+,-).
@@ -218,7 +237,10 @@ def run_experiment(
     syndromes, records = simulate(
         eta_true, kappa, gamma, dt, n_steps, n_runs, seed
     )
-    grid = np.round(np.arange(0.1, 1.51, 0.05), 3)
+    grid = ETA_GRID
+    for value, label in ((eta_true, "eta_true"), (eta_assumed, "eta_assumed")):
+        if not np.isclose(grid, value).any():
+            raise ValueError(f"{label} = {value} is not on the candidate grid 0.10, 0.15, ..., 1.50")
     log_likelihood, z_statistic, maps = run_filter(
         records, grid, kappa, gamma, dt
     )
@@ -254,31 +276,53 @@ def run_experiment(
         "  maximum-likelihood eta from the same records: "
         f"mean {eta_ml.mean():.3f}, range {eta_ml.min():.2f}-{eta_ml.max():.2f}"
     )
-    print("  syndrome-tracking error (fraction of time MAP sector wrong):")
+    print("  syndrome-tracking error (fraction of time steps at which the MAP sector is wrong):")
     print(
         f"    true eta {eta_true}: {tracking_error[:, true_index].mean():.4f}   "
         f"assumed eta {eta_assumed}: {tracking_error[:, assumed_index].mean():.4f}   "
-        f"re-estimated: {ml_error.mean():.4f}"
+        f"re-estimated (rerun retrospectively): {ml_error.mean():.4f}"
     )
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Model-relative blindness in continuous error correction (Blind by Design, §6.4.2)."
+    )
+    parser.add_argument("--kappa", type=float, default=4.0, help="measurement strength (default 4.0)")
+    parser.add_argument("--gamma", type=float, default=0.05, help="bit-flip rate per qubit (default 0.05)")
+    parser.add_argument("--dt", type=float, default=0.005, help="time step (default 0.005)")
+    parser.add_argument("--eta-true", type=float, default=0.5, help="true detector efficiency (default 0.5)")
+    parser.add_argument("--eta-assumed", type=float, default=1.0, help="efficiency assumed by the controller (default 1.0)")
+    parser.add_argument("--runs", type=int, default=20, help="number of simulated records (default 20)")
+    parser.add_argument("--seed", type=int, default=20261002, help="random seed (default 20261002)")
+    parser.add_argument("--durations", type=float, nargs="+", default=[5.0, 25.0],
+                        help="record durations to evaluate (default 5 25)")
+    return parser.parse_args()
+
+
 def main() -> None:
-    """Run the two published-duration simulations with fixed parameters."""
+    """Run the misspecification experiment for each requested duration."""
+    args = parse_args()
     start = time.time()
-    print(f"Python {platform.python_version()} | numpy {np.__version__}")
-
-    parameters = {
-        "kappa": 4.0,
-        "gamma": 0.05,
-        "dt": 0.005,
-        "eta_true": 0.5,
-        "eta_assumed": 1.0,
-        "n_runs": 20,
-        "seed": 20261002,
-    }
-    for duration in (5.0, 25.0):
-        run_experiment(duration, **parameters)
-
+    print("=== Run configuration ===")
+    print(f"script version = {SCRIPT_VERSION}")
+    print(f"Python version = {platform.python_version()}")
+    print(f"NumPy version = {np.__version__}")
+    print(f"kappa = {args.kappa}; gamma = {args.gamma}; dt = {args.dt}")
+    print(f"eta_true = {args.eta_true}; eta_assumed = {args.eta_assumed}")
+    print(f"runs = {args.runs}; seed = {args.seed}; durations = {args.durations}")
+    print("candidate eta grid = 0.10, 0.15, ..., 1.50")
+    for duration in args.durations:
+        run_experiment(
+            duration,
+            kappa=args.kappa,
+            gamma=args.gamma,
+            dt=args.dt,
+            eta_true=args.eta_true,
+            eta_assumed=args.eta_assumed,
+            n_runs=args.runs,
+            seed=args.seed,
+        )
     print(f"\nelapsed {time.time() - start:.1f} s")
 
 

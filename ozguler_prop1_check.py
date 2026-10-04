@@ -4,52 +4,73 @@
 ozguler_prop1_check.py
 ======================
 
-Independent numerical check accompanying:
+Version:
+    0.1.0 (2026-10-04)
 
-    Peter Kahl, "Blind by Design: Quantum Error Correction, Functional
-    Incompatibility and the Value of Evidence" (2026).
+Supplementary research code for:
 
-Author
-------
-Peter Kahl
-Independent Researcher, Lex et Ratio
-https://www.lexetratio.com
-ORCID: 0009-0003-1616-4843
+    Peter Kahl, 'Blind by Design: Quantum Error Correction, Functional
+    Incompatibility and the Value of Evidence' (2026), §6.1, and the
+    accompanying reliance note (docs/reliance_note_ozguler2026.md).
+
+Author:
+    Peter Kahl
+    Independent researcher, Lex et Ratio
+    https://www.lexetratio.com
+    ORCID: 0009-0003-1616-4843
+
+Repository:
+    https://github.com/Peter-Kahl/blind-by-design-qec
+
+Copyright (c) 2026 Peter Kahl. MIT License (see LICENSE).
+SPDX-License-Identifier: MIT
 
 Purpose
 -------
-Reconstruct the periodic toric-code instrument from Özgüler (2026),
-Proposition 1, and numerically test the sign-symmetry and parity-form claims
-used in the paper. The implementation follows the cited construction rather
-than importing code from the source under examination.
+Independently reconstruct the periodic toric-code instrument of Özgüler (2026,
+arXiv:2609.19090), Proposition 1, from the preprint's own definitions, and
+check numerically the steps of the proposition on which the paper relies.
+No code from the preprint is used.
 
-The script checks:
+The instrument: an L x L periodic toric code (2 L^2 edge qubits, two logical
+qubits), coherent X rotations on every edge, ideal extraction of the Z-type
+(plaquette) syndrome with one dependent check removed, and a deterministic
+minimum-weight X recovery with a lexicographic tie rule.
 
-1. F_s(-theta) = F_s(theta) for every syndrome effect;
-2. reality and parity form F_s = q_s I + b_s P (for odd L);
-3. equality of finite syndrome-history laws at +theta and -theta for complex
-   logical inputs;
-4. K_s(-theta) = conjugate(K_s(theta)); and
-5. persistence of the sign symmetry for unequal per-edge rotations reversed
-   globally.
+For each lattice size the script checks:
 
-State-vector simulation scales exponentially. The default checks therefore use
-L=2 (8 physical qubits) and L=3 (18 physical qubits).
+1. F_s(-theta) = F_s(theta) for every syndrome effect F_s = K_s^dagger K_s;
+2. the effects are real and of the parity form F_s = q_s I + b_s P, where P is
+   the product of the two logical X operators (expected for odd L only);
+3. completeness, sum_s F_s = I;
+4. equality of all multi-round syndrome-history probabilities at +theta and
+   -theta, for random complex logical inputs; and, at L = 3,
+5. persistence of sign symmetry, and K_s(-theta) = conj(K_s(theta)), for
+   unequal per-edge angles reversed together.
+
+Sanity checks confirm that the constructed code states are orthonormal,
+stabilised by every plaquette and star check, and that the logical operators
+commute with the plaquette checks.
+
+Scope
+-----
+Proposition 1 is stated for odd L >= 3. L = 2 is included as a contrast
+outside that scope: there the parity form is not expected to hold, although
+sign symmetry does. That observation is not the preprint's and is not used
+in the paper. State-vector simulation scales as 2^(2 L^2), so only L = 2
+(8 qubits) and L = 3 (18 qubits) are tractable. The checks are finite
+numerical checks; the general result rests on the proof (see the reliance
+note).
 
 Requirements
 ------------
-Python 3.10+ and NumPy.
+Python 3.8 or later; NumPy 1.17 or later.
 
 Run
 ---
     python ozguler_prop1_check.py
 
-Licence
--------
-MIT License. See LICENSE in the repository root.
-SPDX-License-Identifier: MIT
-
-Copyright (c) 2026 Peter Kahl.
+Random inputs use fixed seeds; the run is deterministic.
 """
 
 from __future__ import annotations
@@ -59,202 +80,194 @@ import platform
 
 import numpy as np
 
+SCRIPT_VERSION = "0.1.0"
+THETA = 0.1
+INPUT_SEED = 1
+UNEQUAL_ANGLE_SEED = 7
+N_RANDOM_INPUTS = 3
 
-def build_toric_code(L: int):
-    """Build binary X- and Z-check matrices for an L x L periodic toric code.
 
-    Returns the number of edge qubits, the Z-check matrix, the X-check matrix,
-    and helper functions mapping horizontal/vertical lattice edges to qubits.
+def toric_code(L: int):
+    """Plaquette (Z) and star (X) check matrices of an L x L periodic toric code.
+
+    Edges are indexed horizontal(x, y) = x + L y and
+    vertical(x, y) = L^2 + x + L y, with periodic coordinates.
     """
     n = 2 * L * L
-    horizontal = lambda x, y: (x % L) + L * (y % L)
-    vertical = lambda x, y: L * L + (x % L) + L * (y % L)
+
+    def horizontal(x, y):
+        return (x % L) + L * (y % L)
+
+    def vertical(x, y):
+        return L * L + (x % L) + L * (y % L)
+
     hz = np.zeros((L * L, n), dtype=np.uint8)
     hx = np.zeros((L * L, n), dtype=np.uint8)
-
     for x in range(L):
         for y in range(L):
             row = x + L * y
-            for edge in (
-                horizontal(x, y),
-                horizontal(x, y + 1),
-                vertical(x, y),
-                vertical(x + 1, y),
-            ):
-                hz[row, edge] ^= 1
-            for edge in (
-                horizontal(x, y),
-                horizontal(x - 1, y),
-                vertical(x, y),
-                vertical(x, y - 1),
-            ):
-                hx[row, edge] ^= 1
-
+            for e in (horizontal(x, y), horizontal(x, y + 1), vertical(x, y), vertical(x + 1, y)):
+                hz[row, e] ^= 1          # plaquette
+            for e in (horizontal(x, y), horizontal(x - 1, y), vertical(x, y), vertical(x, y - 1)):
+                hx[row, e] ^= 1          # star
     return n, hz, hx, horizontal, vertical
 
 
-def binary_rowspace(matrix: np.ndarray) -> list[int]:
-    """Return the GF(2) row space as integer bit masks."""
-    vectors = {0}
-    for row in matrix:
-        mask = int("".join(str(bit) for bit in row[::-1]), 2)
-        vectors |= {vector ^ mask for vector in vectors}
-    return sorted(vectors)
+def mask_of(row) -> int:
+    return int(sum(1 << int(i) for i in np.nonzero(row)[0]))
 
 
-def instrument(L: int, thetas):
-    """Construct logical syndrome instruments for specified X-rotation angles.
+def parity_of_masked(indices: np.ndarray, mask: int) -> np.ndarray:
+    """Bitwise parity of (indices & mask) for every basis index."""
+    masked = indices & mask
+    parity = np.zeros_like(indices)
+    while masked.any():
+        parity ^= masked & 1
+        masked >>= 1
+    return parity
 
-    ``thetas`` may contain scalar uniform angles or an n-component array of
-    per-edge angles. The syndrome basis is reduced by one dependent Z check,
-    and each syndrome is assigned a minimum-weight X recovery with a
-    lexicographic tie rule.
-    """
-    n, hz, hx, horizontal, vertical = build_toric_code(L)
-    dimension = 1 << n
-    hz_reduced = hz[:-1]
-    basis_indices = np.arange(dimension, dtype=np.int64)
 
-    syndrome = np.zeros(dimension, dtype=np.int64)
-    for k, row in enumerate(hz_reduced):
-        mask = int(sum(1 << i for i in np.nonzero(row)[0]))
-        parity = np.zeros(dimension, dtype=np.int64)
-        masked = basis_indices & mask
-        while masked.any():
-            parity ^= masked & 1
-            masked >>= 1
-        syndrome |= parity << k
+def build_instrument(L: int):
+    """Return the code isometry, syndrome map, recoveries and logical masks."""
+    n, hz, hx, horizontal, vertical = toric_code(L)
+    dim = 1 << n
+    idx = np.arange(dim, dtype=np.int64)
 
-    recovery: dict[int, int] = {}
+    # Reduced Z syndrome: the last plaquette check is the product of the others.
+    syndrome = np.zeros(dim, dtype=np.int64)
+    for k, row in enumerate(hz[:-1]):
+        syndrome |= parity_of_masked(idx, mask_of(row)) << k
+    n_syndromes = 1 << (L * L - 1)
+
+    # Minimum-weight X recovery; ties broken by the lexicographically first
+    # support (itertools.combinations order).
+    recovery = {}
     for weight in range(n + 1):
-        for combination in itertools.combinations(range(n), weight):
-            error = sum(1 << i for i in combination)
-            syn = int(syndrome[error])
-            recovery.setdefault(syn, error)
-        if len(recovery) == 1 << (L * L - 1):
+        for support in itertools.combinations(range(n), weight):
+            e = sum(1 << i for i in support)
+            recovery.setdefault(int(syndrome[e]), e)
+        if len(recovery) == n_syndromes:
             break
 
-    rowspace = binary_rowspace(hx)
-    logical_zero = np.zeros(dimension, dtype=complex)
-    logical_zero[rowspace] = 1 / np.sqrt(len(rowspace))
+    # |0_L 0_L>: uniform superposition over the X-star group applied to |0...0>.
+    star_group = {0}
+    for row in hx:
+        m = mask_of(row)
+        star_group |= {v ^ m for v in star_group}
+    zero = np.zeros(dim, dtype=complex)
+    zero[sorted(star_group)] = 1 / np.sqrt(len(star_group))
 
-    logical_x = sum(1 << vertical(x, 0) for x in range(L))
-    logical_y = sum(1 << horizontal(0, y) for y in range(L))
+    # Two logical X operators: non-contractible cycles of the dual lattice.
+    logical_x1 = sum(1 << vertical(x, 0) for x in range(L))
+    logical_x2 = sum(1 << horizontal(0, y) for y in range(L))
 
     codewords = []
     for a in (0, 1):
         for b in (0, 1):
-            mask = (logical_x if a else 0) ^ (logical_y if b else 0)
-            codewords.append(logical_zero[basis_indices ^ mask])
-    code_isometry = np.array(codewords)
-
-    output = {}
-    for theta in thetas:
-        angle_vector = np.full(n, theta) if np.isscalar(theta) else np.asarray(theta)
-        evolved = code_isometry.astype(complex).copy()
-        for qubit in range(n):
-            cosine = np.cos(angle_vector[qubit] / 2)
-            sine = -1j * np.sin(angle_vector[qubit] / 2)
-            evolved = cosine * evolved + sine * evolved[:, basis_indices ^ (1 << qubit)]
-
-        kraus = {}
-        for syn, rec in recovery.items():
-            projected = evolved * (syndrome == syn)
-            corrected = projected[:, basis_indices ^ rec]
-            kraus[syn] = code_isometry.conj() @ corrected.T
-
-        key = theta if np.isscalar(theta) else "vec"
-        output[key] = kraus
-
-    return output, logical_x, logical_y
+            m = (logical_x1 if a else 0) ^ (logical_x2 if b else 0)
+            codewords.append(zero[idx ^ m])
+    C = np.array(codewords)        # rows: |a b>_L, a and b in {0, 1}
+    return dict(n=n, hz=hz, hx=hx, idx=idx, syndrome=syndrome, recovery=recovery,
+                C=C, logical_x1=logical_x1, logical_x2=logical_x2)
 
 
-def check_uniform_angles(L: int, theta: float = 0.1) -> None:
-    """Run effect, completeness, parity-form and history checks for one L."""
-    logical_x = np.array([[0, 1], [1, 0]])
-    parity_operator = np.kron(logical_x, logical_x)
+def sanity_checks(inst) -> float:
+    """Largest violation of orthonormality, stabiliser and commutation conditions."""
+    C, idx = inst["C"], inst["idx"]
+    worst = np.abs(C.conj() @ C.T - np.eye(4)).max()
+    for row in inst["hz"]:                       # Z plaquettes: eigenvalue +1
+        sign = 1 - 2 * parity_of_masked(idx, mask_of(row))
+        worst = max(worst, np.abs(C * sign - C).max())
+    for row in inst["hx"]:                       # X stars: eigenvalue +1
+        worst = max(worst, np.abs(C[:, idx ^ mask_of(row)] - C).max())
+    for m in (inst["logical_x1"], inst["logical_x2"]):   # commute with plaquettes
+        for row in inst["hz"]:
+            worst = max(worst, float(bin(m & mask_of(row)).count("1") % 2))
+    return float(worst)
 
-    results, _, _ = instrument(L, [theta, -theta])
-    plus, minus = results[theta], results[-theta]
 
-    effect_difference = max(
-        np.abs(plus[s].conj().T @ plus[s] - minus[s].conj().T @ minus[s]).max()
-        for s in plus
-    )
-    imaginary_effect = max(
-        np.abs((plus[s].conj().T @ plus[s]).imag).max() for s in plus
-    )
+def kraus_operators(inst, angles):
+    """Logical Kraus operators K_s[i, j] = <c_i| R_s P_s U |c_j> for one round."""
+    C, idx, n = inst["C"], inst["idx"], inst["n"]
+    angles = np.broadcast_to(np.asarray(angles, dtype=float), (n,))
+    evolved = C.astype(complex).copy()
+    for q in range(n):
+        evolved = np.cos(angles[q] / 2) * evolved - 1j * np.sin(angles[q] / 2) * evolved[:, idx ^ (1 << q)]
+    kraus = {}
+    for s, r in inst["recovery"].items():
+        projected = evolved * (inst["syndrome"] == s)
+        corrected = projected[:, idx ^ r]
+        kraus[s] = C.conj() @ corrected.T
+    return kraus
 
-    parity_form_difference = 0.0
-    for syndrome in plus:
-        effect = plus[syndrome].conj().T @ plus[syndrome]
-        q = np.trace(effect).real / 4
-        b = np.trace(effect @ parity_operator).real / 4
-        parity_form_difference = max(
-            parity_form_difference,
-            np.abs(effect - (q * np.eye(4) + b * parity_operator)).max(),
-        )
 
-    completeness = np.abs(
-        sum(plus[s].conj().T @ plus[s] for s in plus) - np.eye(4)
-    ).max()
-
-    rng = np.random.default_rng(1)
-    worst_history_difference = 0.0
-    rounds = 2 if L == 3 else 3
-    for _ in range(3):
+def max_history_difference(plus, minus, rounds, rng, n_inputs):
+    worst = 0.0
+    keys = list(plus)
+    for _ in range(n_inputs):
         psi = rng.normal(size=4) + 1j * rng.normal(size=4)
         psi /= np.linalg.norm(psi)
         rho = np.outer(psi, psi.conj())
-        for history in itertools.product(list(plus), repeat=rounds):
+        for history in itertools.product(keys, repeat=rounds):
             a = np.eye(4, dtype=complex)
             b = np.eye(4, dtype=complex)
-            for syndrome in history:
-                a = plus[syndrome] @ a
-                b = minus[syndrome] @ b
-            p_plus = np.trace(a @ rho @ a.conj().T)
-            p_minus = np.trace(b @ rho @ b.conj().T)
-            worst_history_difference = max(
-                worst_history_difference, abs(p_plus - p_minus)
-            )
-
-    print(
-        f"L={L}: {len(plus)} syndromes | "
-        f"max|F(+)-F(-)| {effect_difference:.1e} | "
-        f"max|Im F| {imaginary_effect:.1e} | "
-        f"max|F-(qI+bP)| {parity_form_difference:.1e} | "
-        f"completeness {completeness:.1e} | "
-        f"{rounds}-round history max diff {worst_history_difference:.1e}"
-    )
+            for s in history:
+                a = plus[s] @ a
+                b = minus[s] @ b
+            worst = max(worst, abs(np.trace(a @ rho @ a.conj().T) - np.trace(b @ rho @ b.conj().T)))
+    return float(worst)
 
 
-def check_unequal_angles() -> None:
-    """Test global sign reversal for unequal rotations on all 18 L=3 edges."""
-    rng = np.random.default_rng(7)
-    thetas = rng.uniform(0.02, 0.3, 18)
-    plus = instrument(3, [thetas])[0]["vec"]
-    minus = instrument(3, [-thetas])[0]["vec"]
+def check_lattice(L: int) -> None:
+    inst = build_instrument(L)
+    plus = kraus_operators(inst, THETA)
+    minus = kraus_operators(inst, -THETA)
+    f_plus = {s: k.conj().T @ k for s, k in plus.items()}
+    f_minus = {s: k.conj().T @ k for s, k in minus.items()}
+    P = np.kron(np.array([[0, 1], [1, 0]]), np.array([[0, 1], [1, 0]]))
 
-    effect_difference = max(
-        np.abs(plus[s].conj().T @ plus[s] - minus[s].conj().T @ minus[s]).max()
-        for s in plus
-    )
-    conjugacy_difference = max(
-        np.abs(minus[s] - plus[s].conj()).max() for s in plus
-    )
-    print(
-        "L=3, unequal angles, global sign flip: "
-        f"max|F(+)-F(-)| {effect_difference:.1e} | "
-        f"max|K(-)-conj K(+)| {conjugacy_difference:.1e}"
-    )
+    sign_gap = max(np.abs(f_plus[s] - f_minus[s]).max() for s in f_plus)
+    imag = max(np.abs(f.imag).max() for f in f_plus.values())
+    parity_gap = 0.0
+    for f in f_plus.values():
+        q = np.trace(f).real / 4
+        b = np.trace(f @ P).real / 4
+        parity_gap = max(parity_gap, np.abs(f - (q * np.eye(4) + b * P)).max())
+    completeness = np.abs(sum(f_plus.values()) - np.eye(4)).max()
+    rounds = 2 if L >= 3 else 3
+    history = max_history_difference(plus, minus, rounds, np.random.default_rng(INPUT_SEED), N_RANDOM_INPUTS)
+
+    scope = "within the proposition's scope (odd L)" if L % 2 else "outside the proposition's scope (even L): parity form not expected"
+    print(f"\n=== L = {L}: {inst['n']} qubits, {len(plus)} syndromes; {scope} ===")
+    print(f"code-space sanity checks, largest violation   {sanity_checks(inst):.1e}")
+    print(f"max |F_s(+theta) - F_s(-theta)|                {sign_gap:.1e}")
+    print(f"max |Im F_s|                                   {imag:.1e}")
+    print(f"max |F_s - (q_s I + b_s P)|                    {parity_gap:.1e}")
+    print(f"completeness |sum F_s - I|                     {completeness:.1e}")
+    print(f"max history difference ({rounds} rounds, {N_RANDOM_INPUTS} random inputs) {history:.1e}")
+
+
+def check_unequal_angles(L: int = 3) -> None:
+    inst = build_instrument(L)
+    angles = np.random.default_rng(UNEQUAL_ANGLE_SEED).uniform(0.02, 0.3, inst["n"])
+    plus = kraus_operators(inst, angles)
+    minus = kraus_operators(inst, -angles)
+    sign_gap = max(np.abs(plus[s].conj().T @ plus[s] - minus[s].conj().T @ minus[s]).max() for s in plus)
+    conj_gap = max(np.abs(minus[s] - plus[s].conj()).max() for s in plus)
+    print(f"\n=== L = {L}: unequal angles on all {inst['n']} edges, reversed together ===")
+    print(f"max |F_s(+) - F_s(-)|                          {sign_gap:.1e}")
+    print(f"max |K_s(-) - conj K_s(+)|                     {conj_gap:.1e}")
 
 
 def main() -> None:
-    """Run all independent checks of the cited proposition."""
-    print(f"Python {platform.python_version()} | numpy {np.__version__}")
+    print("=== Run configuration ===")
+    print(f"script version = {SCRIPT_VERSION}")
+    print(f"Python version = {platform.python_version()}")
+    print(f"NumPy version = {np.__version__}")
+    print(f"theta = {THETA}; input seed = {INPUT_SEED}; unequal-angle seed = {UNEQUAL_ANGLE_SEED}")
     for L in (2, 3):
-        check_uniform_angles(L)
-    check_unequal_angles()
+        check_lattice(L)
+    check_unequal_angles(3)
 
 
 if __name__ == "__main__":

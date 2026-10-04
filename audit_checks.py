@@ -4,60 +4,82 @@
 audit_checks.py
 ===============
 
-Construction-audit utilities accompanying:
+Version:
+    0.1.0 (2026-10-04)
 
-    Peter Kahl, "Blind by Design: Quantum Error Correction, Functional
-    Incompatibility and the Value of Evidence" (2026), Appendix A.
+Supplementary research code for:
 
-Author
-------
-Peter Kahl
-Independent Researcher, Lex et Ratio
-https://www.lexetratio.com
-ORCID: 0009-0003-1616-4843
+    Peter Kahl, 'Blind by Design: Quantum Error Correction, Functional
+    Incompatibility and the Value of Evidence' (2026), §6.4.1 and Appendix A.
+
+Author:
+    Peter Kahl
+    Independent researcher, Lex et Ratio
+    https://www.lexetratio.com
+    ORCID: 0009-0003-1616-4843
+
+Repository:
+    https://github.com/Peter-Kahl/blind-by-design-qec
+
+Copyright (c) 2026 Peter Kahl. MIT License (see LICENSE).
+SPDX-License-Identifier: MIT
 
 Purpose
 -------
-Audit three construction questions arising from the paper's Stim/PyMatching
-surface-code experiments:
+Construction audit of the Stim/PyMatching surface-code simulations of §6.4.1.
+It reports validation, not findings: it checks that the pipeline behaves as
+the construction rules of a detector error model (DEM) require.
 
-1. Why do the native and B*** detector error models differ?
-2. Where does comparison family C_B's D6 edge come from: a physical fault or
-   Stim's hyperedge decomposition?
-3. Where is detector D6 in space/time, and how does it connect to boundaries
-   and neighbouring detector D9?
+The circuit is a rotated surface-code memory in the X basis, distance 5,
+five rounds, with two-qubit depolarising noise at p = 0.005 after every
+two-qubit gate (Stim's ``after_clifford_depolarization``). Labels used below:
 
-The script supports four modes: a self-contained demonstration, reconstruction
-of the paper's native circuit (``--mirror``), reconstruction of the complete
-Experiment 7H-C3-v6 pipeline (``--pipeline``), or analysis of saved ``.stim``
-circuits supplied on the command line.
+- native   Stim's generated circuit with DEPOLARIZE1/DEPOLARIZE2 noise.
+- B***     the *baseline* of the paper (Appendix A): the native circuit with
+           each depolarising channel re-expressed as a PAULI_CHANNEL with
+           individually adjustable components, one per qubit or qubit pair.
+- A5       the paper's correlated error: a Y error on each of qubits 6, 7, 19
+           and 20 occurring together with probability q, inserted into the
+           baseline. It is the positive control and the mechanism used in
+           §6.4.1.
+- C_B      an earlier comparison family (YY x YY x YY on pairs (2,3), (6,7),
+           (19,20)). It is retained only to show that its lone-D6 edge comes
+           from Stim's hyperedge decomposition; the paper does not use it as
+           evidence.
+- e*       the matching edge from detector D6 directly to the boundary,
+           flipping no logical observable.
+
+Checks (pipeline mode)
+----------------------
+1. Native versus baseline: the cause of their small DEM discrepancy (Stim's
+   approximate conversion of PAULI_CHANNEL noise, a second-order effect),
+   tested by Stim's refusal of exact conversion, the sign of the gap, and its
+   scaling when the error rate is halved.
+2. The origin of a lone-D6 edge: a physical fault (A5) or Stim's
+   decomposition step (C_B).
+3. The geometry of D6: its position, its matching-graph edges, and its only
+   route to the boundary.
+4. (optional, --lemma-checks) Implementation checks of the lemma of
+   Appendix A.3: e* is absent from the baseline matching graph after every
+   single-channel deletion, and after random reweighting of every channel
+   within the same support.
+
+Modes
+-----
+    python audit_checks.py --pipeline                 # the paper's circuits
+    python audit_checks.py --pipeline --lemma-checks  # plus check 4 (a few minutes)
+    python audit_checks.py --mirror                   # native circuit, two stand-in baselines
+    python audit_checks.py --native n.stim --bstar b.stim [--cb c.stim]
+                           [--native-half nh.stim --bstar-half bh.stim]
+    python audit_checks.py                            # self-contained demonstration
+
+The self-contained demonstration uses a different Stim-generated circuit and
+does not reproduce the paper's figures.
 
 Requirements
 ------------
-Python 3.10+, Stim; PyMatching is required for the pipeline matching-edge
-comparison and is otherwise optional.
-
-Examples
---------
-Self-contained demonstration::
-
-    python audit_checks.py
-
-Rebuild the paper's pipeline::
-
-    python audit_checks.py --pipeline --distance 5 --rounds 5 --p 0.005
-
-Audit saved circuits::
-
-    python audit_checks.py --native native.stim --bstar bstar.stim --cb cb.stim \\
-        --native-half native_half.stim --bstar-half bstar_half.stim
-
-Licence
--------
-MIT License. See LICENSE in the repository root.
-SPDX-License-Identifier: MIT
-
-Copyright (c) 2026 Peter Kahl.
+Python 3.8 or later; Stim; PyMatching (for matching-graph comparisons, used
+in pipeline mode and check 4).
 """
 
 from __future__ import annotations
@@ -66,10 +88,15 @@ import argparse
 import platform
 from collections import defaultdict
 
+import numpy as np
+
 import stim
+
+SCRIPT_VERSION = "0.1.0"
 
 DETECTOR = 6
 PARTNER = 9
+E_STAR = ((6, None), ())   # D6 to the boundary, no logical flip
 NOISE_INSTRUCTIONS = {
     "DEPOLARIZE1", "DEPOLARIZE2", "X_ERROR", "Y_ERROR", "Z_ERROR",
     "PAULI_CHANNEL_1", "PAULI_CHANNEL_2",
@@ -91,10 +118,11 @@ def print_versions() -> None:
         pm_version = pymatching.__version__
     except Exception:
         pm_version = "not installed"
-    print(
-        f"Python {platform.python_version()} | stim {stim.__version__} | "
-        f"pymatching {pm_version}"
-    )
+    print("=== Run configuration ===")
+    print(f"script version = {SCRIPT_VERSION}")
+    print(f"Python version = {platform.python_version()}")
+    print(f"Stim version = {stim.__version__}")
+    print(f"PyMatching version = {pm_version}")
 
 
 def xor_combine(p: float, q: float) -> float:
@@ -351,6 +379,18 @@ def check3(circuit: stim.Circuit, label: str) -> None:
     logical = [(k, p) for k, p in table.items() if signature(k) == tuple(sorted((f"D{DETECTOR}", "L0")))]
     print(f"  errors whose TOTAL signature is D{DETECTOR} alone: {len(alone)}")
     print(f"  errors whose TOTAL signature is D{DETECTOR} + L0: {len(logical)}")
+    try:
+        edges = matching_edges(circuit)
+    except ImportError:
+        print("  (PyMatching not installed: matching-graph edges of D6 not listed)")
+        return
+    print(f"  matching-graph edges at D{DETECTOR} (endpoints, logical fault ids, probability):")
+    for key in sorted((k for k in edges if DETECTOR in k[0]), key=str):
+        print(f"    {key}  p={edges[key]:.3e}")
+    boundary = [k for k in edges if k[0] == (DETECTOR, None)]
+    print(f"  boundary edges at D{DETECTOR}: {len(boundary)} (e* present: {E_STAR in edges})")
+    for key in sorted((k for k in edges if k[0] == (PARTNER, None)), key=str):
+        print(f"  boundary edge at partner D{PARTNER}: {key}  p={edges[key]:.3e}")
 
 
 def _qubits(instruction) -> list[int]:
@@ -450,6 +490,9 @@ def matching_edges(circuit):
 def compare_edges(a, b, label: str) -> float:
     """Compare matching-edge probabilities and return the maximum shared-edge gap."""
     shared = set(a) & set(b)
+    if not shared:
+        print(f"  {label}: no shared matching edges")
+        return 0.0
     differences = [b[key] - a[key] for key in shared]
     worst = max(shared, key=lambda key: abs(b[key] - a[key]))
     gap = abs(b[worst] - a[worst])
@@ -459,7 +502,7 @@ def compare_edges(a, b, label: str) -> float:
     return gap
 
 
-def run_pipeline(distance: int, rounds: int, p: float) -> None:
+def run_pipeline(distance: int, rounds: int, p: float, lemma: bool = False) -> None:
     """Rebuild the paper pipeline and execute all three audit checks."""
     print(f"PIPELINE MODE: distance={distance}, rounds={rounds}, p={p}")
     _, native, _, bstar, cb_insert, expanded = build_pipeline(distance, rounds, p)
@@ -476,6 +519,75 @@ def run_pipeline(distance: int, rounds: int, p: float) -> None:
     print(f"\n  (A5 correlated event inserted at expanded index {index})")
     check2(a5, "A5 correlated pair (q=1e-3)")
     check3(native, "native circuit")
+    if lemma:
+        lemma_checks(bstar)
+
+
+def _channel_occurrences(bstar):
+    """List (instruction index, targets) for every PAULI_CHANNEL occurrence."""
+    occurrences = []
+    for k, instruction in enumerate(bstar):
+        if instruction.name == "PAULI_CHANNEL_1":
+            occurrences += [(k, (q,)) for q in _qubits(instruction)]
+        elif instruction.name == "PAULI_CHANNEL_2":
+            occurrences += [(k, pair) for pair in _pairs(instruction)]
+    return occurrences
+
+
+def _rebuild(bstar, drop=None, scale=None):
+    """Rebuild the baseline, deleting one occurrence or rescaling every channel.
+
+    ``drop`` is an (instruction index, targets) pair to omit; ``scale`` maps
+    each occurrence to a vector of positive factors for its probabilities.
+    """
+    circuit = stim.Circuit()
+    for k, instruction in enumerate(bstar):
+        if instruction.name not in ("PAULI_CHANNEL_1", "PAULI_CHANNEL_2"):
+            circuit.append(instruction)
+            continue
+        args = instruction.gate_args_copy()
+        groups = [(q,) for q in _qubits(instruction)] if instruction.name == "PAULI_CHANNEL_1" else _pairs(instruction)
+        for targets in groups:
+            if drop == (k, targets):
+                continue
+            probs = list(args)
+            if scale is not None:
+                probs = [min(0.5, p * f) for p, f in zip(args, scale[(k, targets)])]
+            circuit.append(instruction.name, list(targets), probs)
+    return circuit
+
+
+def lemma_checks(bstar, n_perturbations: int = 131, seed: int = 20260925) -> None:
+    """Check 4: e* stays absent under deletions and reweightings of the baseline.
+
+    The lemma of Appendix A.3 says that, under independent mechanisms, the
+    matching graph's edge set is fixed by which mechanisms are active, their
+    signatures and the decomposition rule, so reweighting cannot create e*,
+    and deleting mechanisms can remove edges but (if decomposition depends only
+    on the active signatures) cannot create e*. These are implementation
+    checks of that statement, not a proof of it.
+    """
+    print("\n=== CHECK 4: implementation checks of the Appendix A.3 lemma ===")
+    base_edges = set(matching_edges(bstar))
+    occurrences = _channel_occurrences(bstar)
+    print(f"  baseline: {len(base_edges)} matching edges; e* present: {E_STAR in base_edges}; "
+          f"{len(occurrences)} channel occurrences")
+    created, new_edges = 0, 0
+    for occurrence in occurrences:
+        edges = set(matching_edges(_rebuild(bstar, drop=occurrence)))
+        created += E_STAR in edges
+        new_edges += len(edges - base_edges)
+    print(f"  single-channel deletions: {len(occurrences)} tested; e* created in {created}; "
+          f"edges not in the baseline appeared in {new_edges} cases")
+    rng = np.random.default_rng(seed)
+    created, changed = 0, 0
+    for _ in range(n_perturbations):
+        scale = {occ: rng.uniform(0.1, 3.0, 15 if len(occ[1]) == 2 else 3) for occ in occurrences}
+        edges = set(matching_edges(_rebuild(bstar, scale=scale)))
+        created += E_STAR in edges
+        changed += edges != base_edges
+    print(f"  random reweightings within the same support: {n_perturbations} tested (seed {seed}); "
+          f"e* created in {created}; edge set changed in {changed}")
 
 
 def load(path: str | None):
@@ -485,7 +597,7 @@ def load(path: str | None):
 
 def parse_args():
     """Parse command-line options."""
-    parser = argparse.ArgumentParser(description=__doc__.split("Purpose", 1)[0])
+    parser = argparse.ArgumentParser(description="Construction audit for Blind by Design, §6.4.1 and Appendix A.")
     parser.add_argument("--native")
     parser.add_argument("--bstar")
     parser.add_argument("--cb")
@@ -495,7 +607,10 @@ def parse_args():
     parser.add_argument("--mirror", action="store_true")
     parser.add_argument("--distance", type=int, default=5)
     parser.add_argument("--rounds", type=int, default=5)
-    parser.add_argument("--pipeline", action="store_true")
+    parser.add_argument("--pipeline", action="store_true",
+                        help="rebuild the paper's circuits (native, baseline, C_B, A5) and run checks 1-3")
+    parser.add_argument("--lemma-checks", action="store_true",
+                        help="with --pipeline, also run check 4 (deletions and reweightings; a few minutes)")
     return parser.parse_args()
 
 
@@ -504,7 +619,7 @@ def main() -> None:
     args = parse_args()
     print_versions()
     if args.pipeline:
-        run_pipeline(args.distance, args.rounds, args.p)
+        run_pipeline(args.distance, args.rounds, args.p, lemma=args.lemma_checks)
         return
     if args.mirror:
         print(f"MIRROR MODE: distance={args.distance}, rounds={args.rounds}, p={args.p}")
