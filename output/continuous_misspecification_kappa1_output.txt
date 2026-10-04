@@ -1,0 +1,23 @@
+=== Run configuration ===
+script version = 0.1.0
+Python version = 3.12.3
+NumPy version = 2.4.4
+kappa = 1.0; gamma = 0.05; dt = 0.005
+eta_true = 0.5; eta_assumed = 1.0
+runs = 20; seed = 20261002; durations = [5.0, 25.0]
+candidate eta grid = 0.10, 0.15, ..., 1.50
+
+T = 5 (1000 steps), 20 runs, true eta = 0.5, assumed eta = 1.0
+  innovation statistic Z, correct model : mean -0.12, sd 1.02, |Z|>3 in 0/20 runs
+  innovation statistic Z, assumed model : mean -2.89, sd 0.94, |Z|>3 in 8/20 runs
+  maximum-likelihood eta from the same records: mean 0.475, range 0.10-0.75
+  syndrome-tracking error (fraction of time steps at which the MAP sector is wrong):
+    true eta 0.5: 0.2255   assumed eta 1.0: 0.2707   re-estimated (rerun retrospectively): 0.2513
+
+T = 25 (5000 steps), 20 runs, true eta = 0.5, assumed eta = 1.0
+  innovation statistic Z, correct model : mean -0.43, sd 1.07, |Z|>3 in 1/20 runs
+  innovation statistic Z, assumed model : mean -6.68, sd 0.92, |Z|>3 in 20/20 runs
+  maximum-likelihood eta from the same records: mean 0.450, range 0.20-0.60
+  syndrome-tracking error (fraction of time steps at which the MAP sector is wrong):
+    true eta 0.5: 0.2455   assumed eta 1.0: 0.3005   re-estimated (rerun retrospectively): 0.2462
+

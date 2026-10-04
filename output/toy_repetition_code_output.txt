@@ -1,1 +1,43 @@
+=== Run configuration ===
+script version = 0.1.0
+Python version = 3.12.3
+NumPy version = 2.4.4
+theta = 0.2; fidelity rounds = 50; history rounds = 4; unequal angles = (0.13, 0.27, 0.05)
 
+=== 1. Syndrome probabilities for each logical input ===
+syndrome order: (0,0) (0,1) (1,0) (1,1)
+theta = +0.2  input  0L: 0.97039787  0.00986738  0.00986738  0.00986738
+theta = +0.2  input  1L: 0.97039787  0.00986738  0.00986738  0.00986738
+theta = +0.2  input  +L: 0.97039787  0.00986738  0.00986738  0.00986738
+theta = +0.2  input +iL: 0.97039787  0.00986738  0.00986738  0.00986738
+theta = -0.2  input  0L: 0.97039787  0.00986738  0.00986738  0.00986738
+theta = -0.2  input  1L: 0.97039787  0.00986738  0.00986738  0.00986738
+theta = -0.2  input  +L: 0.97039787  0.00986738  0.00986738  0.00986738
+theta = -0.2  input +iL: 0.97039787  0.00986738  0.00986738  0.00986738
+largest difference between any two laws: 3.3e-16
+
+=== 2. Syndrome effects at +theta ===
+syndrome (0, 0): F_s = 0.9703978728 x identity
+syndrome (0, 1): F_s = 0.0098673757 x identity
+syndrome (1, 0): F_s = 0.0098673757 x identity
+syndrome (1, 1): F_s = 0.0098673757 x identity
+largest deviation from a multiple of the identity: 6.5e-20
+completeness |sum F_s - I|: 2.2e-16
+
+=== 3. Entanglement fidelity after 50 rounds ===
+true theta = +0.2:  no extra correction 0.976286   correction tuned to +theta 1.000000
+true theta = -0.2:  no extra correction 0.976286   correction tuned to +theta 0.913306
+
+=== 4. Sentinel qubit prepared in |0>, rotated, measured in the Y basis ===
+true theta = +0.2:  <Y> = -0.198669
+true theta = -0.2:  <Y> = +0.198669
+
+=== 5. All 4-round syndrome histories, unequal angles reversed together ===
+input (|0> + i|1>)/sqrt2: max |P(+) - P(-)| over 256 histories = 8.7e-19
+input 0.6|0> + 0.8i|1>: max |P(+) - P(-)| over 256 histories = 4.3e-19
+
+=== Summary ===
+PASS  syndrome law independent of input and sign
+PASS  effects are multiples of the identity
+PASS  effects sum to the identity
+PASS  history laws equal at +theta and -theta

@@ -1,0 +1,102 @@
+=== Run configuration ===
+script version = 0.1.0
+Python version = 3.12.3
+Stim version = 1.16.0
+PyMatching version = 2.4.0
+PIPELINE MODE: distance=5, rounds=5, p=0.005
+  detectors 120; B*** instructions 273; C_B insertion index 57
+
+=== CHECK 1: native vs B*** ===
+  [native] converted EXACTLY (no approximation needed)
+  [B***] exact conversion REFUSED by Stim: Encountered the operation PAULI_CHANNEL_2 during error analysis, but this operation requires the `approximate_disjoint_e
+  [B***] converted with approximate_disjoint_errors=True
+  full error rate: 1679 shared signatures | only in native: 0 | only in B***: 0
+  max |p_B*** - p_native| = 1.709e-05
+  B*** lower in 1679, higher in 0, equal in 0 of 1679 shared signatures
+  [native, half rate] converted EXACTLY (no approximation needed)
+  [B***, half rate] exact conversion REFUSED by Stim: Encountered the operation PAULI_CHANNEL_2 during error analysis, but this operation requires the `approximate_disjoint_e
+  [B***, half rate] converted with approximate_disjoint_errors=True
+  half error rate: 1679 shared signatures | only in native: 0 | only in B***: 0
+  max |p_B*** - p_native| = 4.303e-06
+  B*** lower in 1679, higher in 0, equal in 0 of 1679 shared signatures
+  scaling: max gap at half rate / max gap at full rate = 0.252 (about 0.25 supports a second-order approximation effect; about 0.5 points to a first-order construction difference)
+  READING: Stim refused exact B*** conversion; approximation is implicated.
+
+  Matching-edge comparison after decomposition:
+  full error rate: native edges 502, B*** edges 502, added 0, removed 0
+  max |p_B*** - p_native| on matching edges = 6.959e-05 at edge ((16, None), ())
+  B*** lower on 502, higher on 0, equal on 0 edges
+  half error rate: native edges 502, B*** edges 502, added 0, removed 0
+  max |p_B*** - p_native| on matching edges = 1.802e-05 at edge ((103, None), ())
+  B*** lower on 502, higher on 0, equal on 0 edges
+  scaling on matching edges: half / full = 0.259
+
+=== CHECK 2: where does a lone-D6 edge come from? [C_B (YY x YY x YY, q=1e-3)] ===
+  [C_B (YY x YY x YY, q=1e-3)] exact conversion REFUSED by Stim: Encountered the operation PAULI_CHANNEL_2 during error analysis, but this operation requires the `approximate_disjoint_e
+  [C_B (YY x YY x YY, q=1e-3)] converted with approximate_disjoint_errors=True
+  4 DEM errors touch D6. Listing all of them:
+    p=9.272e-03  D6 D13
+    p=1.333e-03  D3 D6
+    p=1.333e-03  D6 D9
+    p=1.000e-03  D0 D3 ^ D6   <-- decomposed ('^')
+  Lone-D6 edge as a PHYSICAL fault (no '^'): 0
+  Lone-D6 edge created by DECOMPOSITION ('^'): 1
+  Circuit fault locations behind these errors:
+     ExplainedError {
+         dem_error_terms: D0[coords 2,0,0] D3[coords 4,2,0] D6[coords 6,0,0]
+         CircuitErrorLocation {
+             flipped_pauli_product: Y2[coords 2,0]*Y3[coords 3,1]*Y6[coords 6,0]*Y7[coords 7,1]*Y19[coords 8,2]*Y20[coords 9,3]
+             Circuit location stack trace:
+                 (after 2 TICKs)
+                 at instruction #58 (E) in the circuit
+                 at targets #1 to #6 of the instruction
+                 resolving to E(0.001) Y2[coords 2,0] Y3[coords 3,1] Y6[coords 6,0] Y7[coords 7,1] Y19[coords 8,2] Y20[coords 9,3]
+         }
+     }
+
+  (A5 correlated event inserted at expanded index 57)
+
+=== CHECK 2: where does a lone-D6 edge come from? [A5 correlated pair (q=1e-3)] ===
+  [A5 correlated pair (q=1e-3)] exact conversion REFUSED by Stim: Encountered the operation PAULI_CHANNEL_2 during error analysis, but this operation requires the `approximate_disjoint_e
+  [A5 correlated pair (q=1e-3)] converted with approximate_disjoint_errors=True
+  4 DEM errors touch D6. Listing all of them:
+    p=9.272e-03  D6 D13
+    p=1.333e-03  D3 D6
+    p=1.333e-03  D6 D9
+    p=1.000e-03  D6
+  Lone-D6 edge as a PHYSICAL fault (no '^'): 1
+  Lone-D6 edge created by DECOMPOSITION ('^'): 0
+  Circuit fault locations behind these errors:
+     ExplainedError {
+         dem_error_terms: D6[coords 6,0,0]
+         CircuitErrorLocation {
+             flipped_pauli_product: Y6[coords 6,0]*Y7[coords 7,1]*Y19[coords 8,2]*Y20[coords 9,3]
+             Circuit location stack trace:
+                 (after 2 TICKs)
+                 at instruction #58 (E) in the circuit
+                 at targets #1 to #4 of the instruction
+                 resolving to E(0.001) Y6[coords 6,0] Y7[coords 7,1] Y19[coords 8,2] Y20[coords 9,3]
+         }
+     }
+
+=== CHECK 3: where is D6? [native circuit] ===
+  circuit has 120 detectors, 1 observable(s)
+  D6: coordinates [6.0, 0.0, 0.0]
+  D9: coordinates [8.0, 2.0, 0.0]
+  detector x range 0.0..10.0, y range 0.0..10.0
+  D6 on outermost x column: False; on outermost y row: True
+  D6 is in time slice 0.0 of [0.0, 1.0, 2.0, 3.0, 4.0, 5.0]
+  [native circuit] converted EXACTLY (no approximation needed)
+  errors whose TOTAL signature is D6 alone: 0
+  errors whose TOTAL signature is D6 + L0: 0
+  matching-graph edges at D6 (endpoints, logical fault ids, probability):
+    ((3, 6), ())  p=1.335e-03
+    ((6, 13), ())  p=9.276e-03
+    ((6, 9), ())  p=1.335e-03
+  boundary edges at D6: 0 (e* present: False)
+  boundary edge at partner D9: ((9, None), ())  p=5.319e-03
+
+=== CHECK 4: implementation checks of the Appendix A.3 lemma ===
+  baseline: 502 matching edges; e* present: False; 520 channel occurrences
+  single-channel deletions: 520 tested; e* created in 0; edges not in the baseline appeared in 0 cases
+  random reweightings within the same support: 131 tested (seed 20260925); e* created in 0; edge set changed in 0
