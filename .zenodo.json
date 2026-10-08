@@ -1,8 +1,8 @@
 {
   "title": "Blind by Design: Computational Supplement",
   "upload_type": "software",
-  "version": "0.1.0",
-  "description": "Computational supplement to 'Blind by Design: Quantum Error Correction, Functional Incompatibility and the Value of Evidence' (Lex et Ratio Working Paper LXR-2026-PHI-BBDQEC-WP). Four scripts: a three-qubit repetition-code instrument showing observation-relative and function-relative blindness; an independent numerical check of a toric-code sign-symmetry result (Özgüler 2026, Proposition 1); a construction audit of Stim/PyMatching surface-code simulations; and a continuous error-correction simulation in which a misspecified detector efficiency is detected and repaired from the records already held. Includes the complete output of each reference run and the reliance note on the preprint result used in the paper.",
+  "version": "0.2.0",
+  "description": "Computational supplement to 'Blind by Design: Quantum Error Correction, Functional Incompatibility and the Value of Evidence' (Lex et Ratio Working Paper LXR-2026-PHI-BBDQEC-WP). Five scripts: a numerical check of Proposition 5.2, which bounds what the classical record of an approximately function-preserving inquiry can reveal about an encoded quantum state (leak at most 2√ε for functional defect ε in diamond norm), on a toric-code and a repetition-code instrument; a three-qubit repetition-code instrument showing observation-relative and function-relative blindness; an independent numerical check of a toric-code sign-symmetry result (Özgüler 2026, Proposition 1); a construction audit of Stim/PyMatching surface-code simulations; and a continuous error-correction simulation in which a misspecified detector efficiency is detected and repaired from the records already held. Includes the complete output of each reference run and the reliance note on the preprint result used in the paper.",
   "creators": [
     {
       "name": "Kahl, Peter",
@@ -20,7 +20,9 @@
     "detector error models",
     "model misspecification",
     "continuous measurement",
-    "philosophy of science"
+    "philosophy of science",
+    "information-disturbance trade-off",
+    "diamond norm"
   ],
   "related_identifiers": [
     {
@@ -28,6 +30,18 @@
       "relation": "references",
       "resource_type": "publication-preprint",
       "scheme": "arxiv"
+    },
+    {
+      "identifier": "10.1109/TIT.2008.917696",
+      "relation": "references",
+      "resource_type": "publication-article",
+      "scheme": "doi"
+    },
+    {
+      "identifier": "10.4086/cjtcs.2013.008",
+      "relation": "references",
+      "resource_type": "publication-article",
+      "scheme": "doi"
     }
   ]
 }
