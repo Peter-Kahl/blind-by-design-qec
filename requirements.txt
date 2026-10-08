@@ -1,11 +1,14 @@
 # Runtime dependencies.
-# NumPy: all scripts except audit_checks.py (any version providing
-# numpy.random.default_rng, 1.17 or later).
-numpy>=1.17
+# NumPy: all scripts except audit_checks.py (1.17 or later; 1.20 or later
+# for prop52_numerical_check.py).
+numpy>=1.20
+# CVXPY (with its default Clarabel solver): prop52_numerical_check.py only.
+cvxpy>=1.4
 # Stim and PyMatching: audit_checks.py only.
 stim
 pymatching
 
 # Reference runs (output/) were produced with:
-#   Python 3.12.3, NumPy 2.4.4, Stim 1.16.0, PyMatching 2.4.0
+#   Python 3.12.3, NumPy 2.4.4, Stim 1.16.0, PyMatching 2.4.0,
+#   CVXPY 1.9.3, Clarabel 0.11.1
 # For exact textual reproduction, use those versions.

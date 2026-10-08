@@ -2,6 +2,37 @@
 
 All notable changes to this repository are recorded here.
 
+## 0.2.0 — 2026-10-07
+
+Adds the numerical check of Proposition 5.2 (approximate classical-output blindness, §5.3.1 of the paper). Results of the four existing scripts are unchanged.
+
+### New: `prop52_numerical_check.py`
+
+- Checks the inequality of Proposition 5.2, leak ≤ 2√ε, on the L = 3 toric-code instrument of Özgüler (2026) over seven rotation angles (θ = 0.05 to 0.5), with ε computed both against the identity and after a fitted unitary decoder.
+- Checks part (ii) of the proposition over N = 1, 2 and 3 rounds at θ = 0.1 and 0.3: the exact N-round leak against its bound, and ‖Λ^N − id‖⋄ ≤ N ε.
+- Shows that the converse fails: in the three-qubit repetition code every three-round history law is independent of the encoded state, although the logical channel is not the identity.
+- Reports, for contrast, the sign-discrimination profile of a sentinel qubit.
+- Diamond norms are computed by semidefinite programme (Watrous 2013) with CVXPY and Clarabel. Reported values are certified upper bounds; every verdict is tested at a certified lower bound, so neither depends on solver tolerance. The SDP is validated against a closed form.
+- The leak is computed exactly from the parity form of the history effects; the script reports the deviation from that form.
+- Reuses the instrument built by `ozguler_prop1_check.py`; no code is duplicated.
+- Ends with a PASS/FAIL summary, as `blind_by_design_toy_repetition_code.py` does.
+
+### All scripts
+
+- Version number raised to 0.2.0 in each header and in the printed run configuration. No other changes to the four existing scripts.
+
+### Reference outputs
+
+- All six reference outputs produced with version 0.2.0 in one environment: Python 3.12.3, NumPy 2.4.4, Stim 1.16.0, PyMatching 2.4.0, CVXPY 1.9.3, Clarabel 0.11.1.
+- The five outputs carried over from 0.1.0 are identical to their 0.1.0 versions except for the version line.
+- Added `output/prop52_numerical_check_output.txt`.
+
+### Repository
+
+- `README.md`: new script described; Propositions 5.1 and 5.2 summarised; correspondence table, requirements, running instructions, reference-output table, limits, structure listing and citations updated; version correspondence now points Version 1.0 of the paper to 0.2.0, superseding the correspondence stated for 0.1.0 below (0.1.0 accompanied a draft without Proposition 5.2).
+- `requirements.txt`: CVXPY added; reference environment updated.
+- `CITATION.cff` and `.zenodo.json`: version, date, description and keywords updated; references to Kretschmann, Schlingemann and Werner (2008) and Watrous (2013) added.
+
 ## 0.1.0 — 2026-10-04
 
 First versioned release, corresponding to Version 1.0 of the paper. Numerical results are unchanged from the unversioned scripts except where noted.

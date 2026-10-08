@@ -5,7 +5,7 @@ blind_by_design_continuous_misspecification.py
 ==============================================
 
 Version:
-    0.1.0 (2026-10-04)
+    0.2.0 (2026-10-07)
 
 Supplementary research code for:
 
@@ -88,7 +88,7 @@ import time
 
 import numpy as np
 
-SCRIPT_VERSION = "0.1.0"
+SCRIPT_VERSION = "0.2.0"
 ETA_GRID = np.round(np.arange(0.1, 1.51, 0.05), 3)
 
 

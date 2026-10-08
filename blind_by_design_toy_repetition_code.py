@@ -5,7 +5,7 @@ blind_by_design_toy_repetition_code.py
 ======================================
 
 Version:
-    0.1.0 (2026-10-04)
+    0.2.0 (2026-10-07)
 
 Supplementary research code for:
 
@@ -68,7 +68,7 @@ from typing import Dict, Tuple
 
 import numpy as np
 
-SCRIPT_VERSION = "0.1.0"
+SCRIPT_VERSION = "0.2.0"
 
 THETA = 0.2              # rotation angle used in §6.2
 FIDELITY_ROUNDS = 50     # rounds for the entanglement-fidelity comparison

@@ -7,15 +7,18 @@ authors:
     given-names: "Peter"
     affiliation: "Independent researcher, Lex et Ratio"
     orcid: "https://orcid.org/0009-0003-1616-4843"
-version: "0.1.0"
-date-released: "2026-10-04"
+version: "0.2.0"
+date-released: "2026-10-07"
 repository-code: "https://github.com/Peter-Kahl/blind-by-design-qec"
 url: "https://www.lexetratio.com"
 license: MIT
 abstract: >-
   Computational supplement to 'Blind by Design: Quantum Error Correction,
   Functional Incompatibility and the Value of Evidence' (Lex et Ratio Working
-  Paper LXR-2026-PHI-BBDQEC-WP). Four scripts: a three-qubit repetition-code
+  Paper LXR-2026-PHI-BBDQEC-WP). Five scripts: a numerical check of
+  Proposition 5.2, which bounds what the classical record of an approximately
+  function-preserving inquiry can reveal about an encoded quantum state; a
+  three-qubit repetition-code
   instrument showing observation-relative and function-relative blindness; an
   independent numerical check of a toric-code sign-symmetry result (Özgüler
   2026, Proposition 1); a construction audit of Stim/PyMatching surface-code
@@ -31,6 +34,8 @@ keywords:
   - "model misspecification"
   - "continuous measurement"
   - "philosophy of science"
+  - "information-disturbance trade-off"
+  - "diamond norm"
 references:
   - type: report
     title: "Blind by Design: Quantum Error Correction, Functional Incompatibility and the Value of Evidence"
@@ -51,3 +56,27 @@ references:
         given-names: "A. B."
     year: 2026
     url: "https://arxiv.org/abs/2609.19090"
+  - type: article
+    title: "The information-disturbance tradeoff and the continuity of Stinespring's representation"
+    authors:
+      - family-names: "Kretschmann"
+        given-names: "D."
+      - family-names: "Schlingemann"
+        given-names: "D."
+      - family-names: "Werner"
+        given-names: "R. F."
+    year: 2008
+    journal: "IEEE Transactions on Information Theory"
+    volume: 54
+    issue: 4
+    start: 1708
+    end: 1717
+    doi: "10.1109/TIT.2008.917696"
+  - type: article
+    title: "Simpler semidefinite programs for completely bounded norms"
+    authors:
+      - family-names: "Watrous"
+        given-names: "J."
+    year: 2013
+    journal: "Chicago Journal of Theoretical Computer Science"
+    doi: "10.4086/cjtcs.2013.008"
