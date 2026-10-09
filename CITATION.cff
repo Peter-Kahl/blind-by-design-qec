@@ -7,8 +7,8 @@ authors:
     given-names: "Peter"
     affiliation: "Independent researcher, Lex et Ratio"
     orcid: "https://orcid.org/0009-0003-1616-4843"
-version: "0.2.0"
-date-released: "2026-10-07"
+version: "0.6.1"
+date-released: "2026-10-08"
 repository-code: "https://github.com/Peter-Kahl/blind-by-design-qec"
 url: "https://www.lexetratio.com"
 license: MIT

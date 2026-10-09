@@ -5,7 +5,7 @@ audit_checks.py
 ===============
 
 Version:
-    0.2.0 (2026-10-07)
+    0.6.1 (2026-10-08)
 
 Supplementary research code for:
 
@@ -92,7 +92,7 @@ import numpy as np
 
 import stim
 
-SCRIPT_VERSION = "0.2.0"
+SCRIPT_VERSION = "0.6.1"
 
 DETECTOR = 6
 PARTNER = 9

@@ -25,7 +25,7 @@ This repository contains the five scripts behind the paper's computations, the c
 
 | Script | Paper | What it shows |
 |---|---|---|
-| `prop52_numerical_check.py` | §5.3.1 | Numerical check of Proposition 5.2 (approximate classical-output blindness) on the toric and repetition codes |
+| `prop52_numerical_check.py` | §5.3.1; Appendix B | Numerical check of Proposition 5.2 (approximate classical-output blindness) on the toric and repetition codes; comparison of the complementary output with the record; pointwise versus uniform repair over all channels, with and without the syndrome history |
 | `blind_by_design_toy_repetition_code.py` | §§6.2–6.3 | Observation-relative and function-relative blindness in one minimal system |
 | `ozguler_prop1_check.py` | §6.1; reliance note | Independent numerical check of the toric-code sign-symmetry result used in §6.1 |
 | `audit_checks.py` | §6.4.1; Appendix A | Construction audit of the surface-code simulations |
@@ -44,13 +44,17 @@ On the L = 3 toric-code instrument of Özgüler (2026), rebuilt by `ozguler_prop
 3. the same distance after a unitary decoder fitted to the logical channel, ε_dec, which bounds from above the 'best possible repair' in the proposition; and
 4. the bounds 2√ε_id and 2√ε_dec, and their ratio to the leak.
 
-It then repeats the instrument for N = 1, 2 and 3 rounds at θ = 0.1 and 0.3, compares the exact N-round leak with its bound, and checks that the N-round logical channel's distance from the identity is at most N times the one-round distance, as part (ii) of the proposition requires.
+It then compares the record with the *complementary output* it is read from. The complementary channel keeps what the process passes to its environment: here, the syndrome register with the coherences between syndrome outcomes intact. The classical record is that output with the coherences discarded. For four angles the script finds, by local search over pairs of pure encoded states, how far apart the two complementary outputs can be, which is a lower bound on the true maximum. In the reference run the complementary output distinguishes encoded states about 14,000 times better than the record at θ = 0.05, growing as θ² rather than θ⁶, and comes within a factor of about 1.4 of the bound 2√ε_dec in the tested regime. Most of the observed gap between bound and record therefore lies in what the record discards. The complementary output is a mathematical construction from a dilation of the channel; how much of it is physically present in, or accessible from, a real apparatus depends on the implementation.
+
+It then separates pointwise from uniform repair. The recoverability defect allows a different repair for each noise channel, but the record cannot reveal the rotation's sign, so a repair chosen from the record alone must serve both signs. By semidefinite programming over all repair channels, the script brackets four optima: the best repair for a known sign and for both signs, each with the syndrome history discarded and with the history used (one repair per class of syndromes whose branch maps agree up to weight). Each optimum is bracketed by the defect achieved by the solver's repairs, made exact channels (an upper bound), and by the dual objective at a dual point made exactly feasible (a lower bound). For the history-used repairs, a second lower bound is computed from the same dual point with the dual constraint made feasible for each of the 256 syndromes separately; it bounds the optimum over all history-conditioned policies without assuming that the grouping into classes is exact, and it agrees with the grouped bound to within 0.1 per cent for the sign-blind repair. With the history discarded, the fitted unitary repair is within about 3 per cent of the optimum, and no repair is within 3 per cent of the best sign-blind repair. With the history used, sign-blind repair improves by 1 to 29 per cent across the angles, but known-sign repair improves far more, so the cost of not knowing the sign grows: at θ = 0.05 the sign-blind optimum is at least 3.7 × 10⁻⁴ and the known-sign one at most 1.0 × 10⁻⁶. One round only.
+
+It also repeats the instrument for N = 1, 2 and 3 rounds at θ = 0.1 and 0.3, compares the exact N-round leak with its bound, and checks that the N-round logical channel's distance from the identity is at most N times the one-round distance, as part (ii) of the proposition requires.
 
 Two contrasts follow. In the three-qubit repetition code, every three-round history law is exactly independent of the encoded state, although the logical channel is not the identity: a blind record does not certify that the state is preserved, so the converse of the proposition fails. And a single sentinel qubit measured in the Y basis distinguishes the rotation's sign with per-shot total variation sin θ, whereas the passive syndrome record's sign discrimination is identically zero (checked by `ozguler_prop1_check.py`).
 
 In the reference run the bound holds at every angle and round count. It is loose by a factor of about 20,000 at θ = 0.05 and about 7 at θ = 0.5. At small angles the leak grows as θ⁶ (that is, θ^2L), ε_id as θ³ (the coherent logical rotation) and ε_dec as θ⁴ (what remains once the fitted decoder removes that rotation).
 
-Two safeguards make the verdicts independent of solver tolerance. Every reported diamond distance is a certified upper bound, because the SDP's dual solution is shifted until it is exactly feasible before the objective is evaluated. Every check of the inequality is made at a certified lower bound, the trace distance produced by a maximally entangled input. The SDP is validated against the closed form 2 sin(φ/2) for a single-qubit phase rotation. The leak is computed exactly from the parity form of the history effects, F_h = q_h I + g_h P with P the product of the two logical X operators; the script reports the largest deviation from that form, which is at rounding level throughout.
+Two safeguards keep the verdicts from depending on solver tolerance. Every reported diamond distance is an upper bound, because the SDP's dual solution is shifted until it satisfies the dual constraints, as judged by a floating-point eigenvalue computation, before the objective is evaluated. Every check of the inequality is made at a lower bound that does not come from the solver at all: the trace distance produced by one explicit input, the maximally entangled state. Both are numerically constructed estimates in double-precision floating point. The margins by which the checks pass far exceed the solver residuals, but the bounds have not been certified by interval arithmetic or validated eigenvalue bounds; the computations illustrate the proposition and test the implementation, and the proposition itself rests on its proof. One limit should be stated plainly: Proposition 5.2 is stated with the best repair over all channels, which the script cannot compute. It uses one fitted unitary repair, which can only overstate the defect, so its checks test a necessary consequence of the proposition. A violation would refute it; passing does not confirm the bound at its strongest. The SDP is validated against the closed form 2 sin(φ/2) for a single-qubit phase rotation. The leak is computed exactly from the parity form of the history effects, F_h = q_h I + g_h P with P the product of the two logical X operators; the script reports the largest deviation from that form, which is at rounding level throughout.
 
 ### `blind_by_design_toy_repetition_code.py`
 
@@ -95,7 +99,8 @@ No new measurement is needed: the blindness is model-relative. With no feedback 
 
 - Finite numerical agreement does not prove a symmetry for arbitrary code size; the toric-code result rests on its proof.
 - Proposition 5.2 rests on its proof, not on `prop52_numerical_check.py`. The script checks the inequality on two instruments, at seven angles and up to three rounds; it does not test adaptive inquiries, other codes or other noise.
-- The fitted decoder in `prop52_numerical_check.py` is one unitary repair, not the best possible repair over all channels. The bound it yields is therefore valid but may be weaker than the proposition allows.
+- The fitted decoder in `prop52_numerical_check.py` is one unitary repair, not the best possible repair over all channels. Its checks test a consequence of Proposition 5.2, not the bound at its strongest.
+- The complement distances in `prop52_numerical_check.py` come from a local search and are lower bounds on the true maxima.
 - How loose the bound is on these instruments says nothing about how loose it is in general.
 - Small state-vector calculations say nothing about asymptotic behaviour.
 - Numerical equality holds only to floating-point precision.
@@ -137,7 +142,7 @@ python blind_by_design_continuous_misspecification.py --kappa 1
 
 ## Reference output
 
-The `output/` folder holds the complete, unedited console output of each reference run, produced by version **0.2.0** of the scripts with Python 3.12.3, NumPy 2.4.4, Stim 1.16.0, PyMatching 2.4.0, CVXPY 1.9.3 and Clarabel 0.11.1:
+The `output/` folder holds the complete, unedited console output of each reference run, produced by version **0.6.1** of the scripts with Python 3.12.3, NumPy 2.4.4, Stim 1.16.0, PyMatching 2.4.0, CVXPY 1.9.3 and Clarabel 0.11.1:
 
 | File | Command |
 |---|---|
@@ -148,18 +153,18 @@ The `output/` folder holds the complete, unedited console output of each referen
 | `continuous_misspecification_output.txt` | `python blind_by_design_continuous_misspecification.py` |
 | `continuous_misspecification_kappa1_output.txt` | `python blind_by_design_continuous_misspecification.py --kappa 1` |
 
-The five outputs carried over from version 0.1.0 were regenerated in the same environment and are identical to the 0.1.0 reference files except for the version line. The elapsed-time line printed by the continuous script is omitted from its reference files, since it varies between runs. To compare a new run with a reference file:
+The five outputs of the other scripts were regenerated in the same environment and are identical to the 0.1.0 reference files except for the version line. The elapsed-time line printed by the continuous script is omitted from its reference files, since it varies between runs. To compare a new run with a reference file:
 
 ```bash
 python ozguler_prop1_check.py > my_run.txt
 diff -u output/ozguler_prop1_check_output.txt my_run.txt
 ```
 
-Exact textual identity is not guaranteed across Python, NumPy, Stim, PyMatching, CVXPY, solver or platform versions. Differences in the last digits of quantities at the level of floating-point rounding (around 10⁻¹⁶ or smaller) do not indicate a failure to reproduce. Diamond distances in `prop52_numerical_check.py` are computed by an iterative solver, and may differ in the third or fourth significant figure across solver versions; the solver reports some solves as 'optimal_inaccurate' (11 in the reference run). Its pass/fail verdicts do not depend on either, because of the certified bounds described above.
+Exact textual identity is not guaranteed across Python, NumPy, Stim, PyMatching, CVXPY, solver or platform versions. Differences in the last digits of quantities at the level of floating-point rounding (around 10⁻¹⁶ or smaller) do not indicate a failure to reproduce. Diamond distances in `prop52_numerical_check.py` are computed by an iterative solver, and may differ in the third or fourth significant figure across solver versions; the solver reports some solves as 'optimal_inaccurate'. Its pass/fail verdicts do not depend on either, because of the bounds described above.
 
 ## Reproducibility
 
-All randomness uses fixed seeds set in the source: 20261002 for the continuous simulation, 1 and 7 for the random inputs and unequal angles of the toric-code check, and 20260925 for the audit's random reweightings. The repetition-code script and `prop52_numerical_check.py` are deterministic. Each script prints its version and the package versions it ran with.
+All randomness uses fixed seeds set in the source: 20261002 for the continuous simulation, 1 and 7 for the random inputs and unequal angles of the toric-code check, 20260925 for the audit's random reweightings, and 0 for the starting points of the complement search in `prop52_numerical_check.py`. The repetition-code script is deterministic. Each script prints its version and the package versions it ran with.
 
 ## Repository structure
 
@@ -192,7 +197,7 @@ blind-by-design-qec/
 
 ## Version correspondence
 
-The figures reported in Version 1.0 of the paper, including the numerical check of Proposition 5.2 in §5.3.1, correspond to version **0.2.0** of this software. Version 0.1.0 accompanied an earlier draft without Proposition 5.2; its other results are unchanged in 0.2.0. Use the archived release of the matching version when reproducing or citing figures. See `CHANGELOG.md` for the history of changes.
+The figures reported in Version 1.0 of the paper, including the numerical checks of §5.3.1, correspond to version **0.6.1** of this software. Versions 0.1.0 to 0.6.0 accompanied earlier drafts; the results of the other four scripts are unchanged throughout. Use the archived release of the matching version when reproducing or citing figures. See `CHANGELOG.md` for the history of changes.
 
 ## Citation
 

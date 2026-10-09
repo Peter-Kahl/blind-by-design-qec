@@ -5,7 +5,7 @@ ozguler_prop1_check.py
 ======================
 
 Version:
-    0.2.0 (2026-10-07)
+    0.6.1 (2026-10-08)
 
 Supplementary research code for:
 
@@ -80,7 +80,7 @@ import platform
 
 import numpy as np
 
-SCRIPT_VERSION = "0.2.0"
+SCRIPT_VERSION = "0.6.1"
 THETA = 0.1
 INPUT_SEED = 1
 UNEQUAL_ANGLE_SEED = 7

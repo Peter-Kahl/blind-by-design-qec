@@ -2,6 +2,96 @@
 
 All notable changes to this repository are recorded here.
 
+## 0.6.1 — 2026-10-08
+
+Removes the dependence of the history-used lower bounds on the grouping of syndromes into classes. Results of the other four scripts are unchanged.
+
+### `prop52_numerical_check.py`
+
+- `optimal_repair` takes an optional list of individual branches and returns a further lower bound: from the same dual point, the dual constraint is made feasible separately for every one of the 256 syndromes, so the bound holds for policies with one repair per syndrome and assumes nothing about proportionality within classes. Upper bounds were already valid for such policies, since one repair per class is one of them.
+- Section 4 prints these bounds for both history-used repairs. In the reference run the sign-blind bound agrees with the grouped one to within 0.1 per cent at every angle; the known-sign bound at θ = 0.05 is negative, hence uninformative, and only the upper end of that bracket is used.
+- New summary check: the sign-blind lower bound with the history used holds over all syndromes without grouping, within 1 per cent. The check that sign-blind repair is more than twice the known-sign optimum now uses the smaller of the two lower bounds.
+
+### All scripts
+
+- Version raised to 0.6.1. No other changes to the four other scripts. The reference outputs of `blind_by_design_continuous_misspecification.py` now keep the elapsed-time line the script prints, as the run produced it.
+
+## 0.6.0 — 2026-10-08
+
+Adds repairs that use the syndrome history, and lower bounds on every optimal repair. Results of the other four scripts are unchanged.
+
+### `prop52_numerical_check.py`
+
+- Section 4 rewritten. Four optimal repairs over all channels are bracketed at each of four angles: known sign and both signs, each with the syndrome history discarded (one repair after the standard correction) and with the history used (one repair per class of syndromes whose branch maps agree up to weight; 20 classes for the L = 3 instrument).
+- Upper bounds: the defect achieved by the solver's repairs, made exact channels. Lower bounds: the dual objective at a dual point built from the solver's dual variables and made exactly feasible, by weak duality. Both are floating-point computations.
+- The optimisation is vectorised (the composed Choi matrix is a fixed linear map of the repair's Choi matrix), which makes the history-conditioned problems tractable.
+- Reference-run findings: with the history discarded, the fitted unitary repair is optimal within the bracket and no repair is within 3 per cent of the best sign-blind repair; using the history improves sign-blind repair by 1 to 29 per cent, and known-sign repair far more, so the known-sign advantage grows.
+- Summary checks revised accordingly.
+
+### All scripts
+
+- Version raised to 0.6.0. No other changes to the four other scripts.
+
+### Repository
+
+- `README.md`, `CITATION.cff` and `.zenodo.json` updated; all reference outputs regenerated in the same environment.
+
+## 0.5.0 — 2026-10-08
+
+Replaces the unitary-only bound on uniform repair with an optimisation over all repair channels. Results of the other four scripts are unchanged.
+
+### `prop52_numerical_check.py`
+
+- Section 4 now computes, by semidefinite programming over all repair channels, the best repair for a known sign (pointwise recoverability) and the best single repair for both signs (uniform recoverability). Each is reported as the solver's objective value and as the defect achieved by the solver's repair after it is made an exact channel (clipped to positive and normalised to preserve trace), evaluated with the bounded diamond-norm routine.
+- Reference-run findings: the fitted unitary repair equals the best repair over all channels to solver accuracy; the best single repair for both signs equals no repair to solver accuracy, at every angle checked.
+- New summary checks: the uniform optimum exceeds twice the pointwise optimum; no repair is within 2 per cent of the uniform optimum; the fitted unitary repair is within 2 per cent of the pointwise optimum.
+- The unitary-only lower bound ½‖Λ₊ − Λ₋‖⋄ is still printed for comparison.
+
+### All scripts
+
+- Version raised to 0.5.0. No other changes to the four other scripts.
+
+### Repository
+
+- `README.md`, `CITATION.cff` and `.zenodo.json` updated; all reference outputs regenerated in the same environment.
+
+## 0.4.0 — 2026-10-08
+
+Adds a comparison of pointwise and uniform repair, and states the status of the numerical bounds more cautiously. Results of the other four scripts are unchanged.
+
+### `prop52_numerical_check.py`
+
+- New section 4: for four angles, the defect of the repair fitted to +θ applied at +θ and at −θ, the defect with no repair, and a lower bound, ½‖Λ₊ − Λ₋‖⋄, on what any single unitary repair can achieve at both signs at once. The recoverability defect of Proposition 5.2 is pointwise; since the syndrome record cannot reveal the sign, a repair chosen from the record must be uniform. New summary check: the uniform unitary bound exceeds the pointwise defect at every angle.
+- The bounds are now described as numerically constructed estimates in floating point, not certified by interval arithmetic or validated eigenvalue bounds ('rigorous up to floating-point rounding' withdrawn).
+- Sections renumbered (repetition code is now 5, sentinel 6).
+
+### All scripts
+
+- Version raised to 0.4.0. No other changes to the four other scripts.
+
+### Repository
+
+- `README.md`, `CITATION.cff` and `.zenodo.json` updated; all reference outputs regenerated in the same environment.
+
+## 0.3.0 — 2026-10-08
+
+Adds a comparison of what the environment receives with what the record keeps, and corrects the description of the numerical bounds. Results of the other four scripts are unchanged.
+
+### `prop52_numerical_check.py`
+
+- New section 3: for four angles, the largest trace distance found between the complementary outputs of two pure encoded states (the syndrome register with coherences kept), compared with the record's leak (coherences discarded) and with the bound 2√ε_dec. In the reference run the complementary output distinguishes encoded states roughly 14,000 times better than the record at θ = 0.05, growing as θ² against the record's θ⁶, and comes within a factor of about 1.4 of the bound. Local search from fixed seeds; the values are lower bounds on the maxima. New summary check: record leak ≤ complement distance ≤ 2√ε_dec.
+- Description of the bounds corrected: upper bounds are repaired dual points and lower bounds explicit entangled-input witnesses, both rigorous up to floating-point rounding (not interval arithmetic). 'Certified' removed.
+- The docstring now states that the checks use one fitted unitary repair, so they test a necessary consequence of Proposition 5.2, not the bound at the infimum over repairs.
+- Sections renumbered (repetition code is now 4, sentinel 5).
+
+### All scripts
+
+- Version raised to 0.3.0. No other changes to the four other scripts.
+
+### Repository
+
+- `README.md`, `requirements.txt` (SciPy noted), `CITATION.cff` and `.zenodo.json` updated; all reference outputs regenerated in the same environment as 0.2.0.
+
 ## 0.2.0 — 2026-10-07
 
 Adds the numerical check of Proposition 5.2 (approximate classical-output blindness, §5.3.1 of the paper). Results of the four existing scripts are unchanged.
