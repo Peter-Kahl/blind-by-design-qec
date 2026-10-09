@@ -1,0 +1,102 @@
+=== Run configuration ===
+script version = 0.6.1
+Python version = 3.12.3
+NumPy version = 2.4.4
+CVXPY version = 1.9.3
+solver = CLARABEL 0.11.1
+thetas = (0.05, 0.1, 0.15, 0.2, 0.3, 0.4, 0.5); N-round thetas = (0.1, 0.3); max rounds = 3
+diamond norm unnormalised, range [0, 2]; leak = total-variation distance, range [0, 1]
+
+SDP validation: max |SDP - 2 sin(phi/2)| over three unitaries = 1.2e-08
+
+=== 1. L = 3 toric code (Özgüler 2026 instrument), one round ===
+ theta  leak_1     eps_id     eps_dec    2sqrt(eps_id)  2sqrt(eps_dec)  bound/leak  LB(id)     LB(dec)    parity res.
+ 0.05   3.885e-07  3.819e-04  1.457e-05  3.908e-02      7.634e-03         19647.7  2.706e-04  1.449e-05  1.1e-16  bound holds
+ 0.10   2.411e-05  3.077e-03  2.555e-04  1.109e-01      3.197e-02          1326.1  2.239e-03  2.516e-04  2.1e-20  bound holds
+ 0.15   2.607e-04  1.065e-02  1.461e-03  2.064e-01      7.644e-02           293.2  7.888e-03  1.423e-03  1.1e-16  bound holds
+ 0.20   1.362e-03  2.593e-02  5.229e-03  3.220e-01      1.446e-01           106.2  1.960e-02  5.058e-03  1.1e-16  bound holds
+ 0.30   1.257e-02  9.051e-02  3.206e-02  6.017e-01      3.581e-01            28.5  7.216e-02  3.101e-02  1.7e-18  bound holds
+ 0.40   5.285e-02  2.111e-01  1.097e-01  9.189e-01      6.625e-01            12.5  1.800e-01  1.075e-01  5.6e-17  bound holds
+ 0.50   1.384e-01  3.802e-01  2.611e-01  1.233e+00      1.022e+00             7.4  3.513e-01  2.595e-01  3.5e-18  bound holds
+local log-log slopes, theta 0.05 -> 0.1: leak 5.96, eps_id 3.01, eps_dec 4.13
+
+=== 2. L = 3 toric code, N rounds of the same instrument ===
+ theta  N  leak_N     ||Lam^N-id||  2sqrt(||Lam^N-id||)  N*eps_id   2sqrt(N*eps_id)  parity res.
+ 0.10   1  2.411e-05  3.077e-03     1.109e-01            3.077e-03  1.109e-01        2.1e-20  bounds hold
+ 0.10   2  4.797e-05  6.153e-03     1.569e-01            6.154e-03  1.569e-01        2.8e-20  bounds hold
+ 0.10   3  7.161e-05  9.228e-03     1.921e-01            9.231e-03  1.922e-01        2.2e-16  bounds hold
+ 0.30   1  1.257e-02  9.051e-02     6.017e-01            9.051e-02  6.017e-01        1.7e-18  bounds hold
+ 0.30   2  2.360e-02  1.780e-01     8.438e-01            1.810e-01  8.509e-01        5.6e-17  bounds hold
+ 0.30   3  3.358e-02  2.624e-01     1.024e+00            2.715e-01  1.042e+00        5.6e-17  bounds hold
+
+=== 3. L = 3 toric code: what the environment receives versus what the record keeps ===
+ theta  complement distance (>=)  record leak   2sqrt(eps_dec)  complement/record
+ 0.05   5.396e-03                 3.885e-07   7.634e-03         13887.0  ordering holds
+ 0.10   2.260e-02                 2.411e-05   3.197e-02           937.4  ordering holds
+ 0.20   1.020e-01                 1.362e-03   1.446e-01            74.9  ordering holds
+ 0.30   2.499e-01                 1.257e-02   3.581e-01            19.9  ordering holds
+local log-log slope of the complement distance, theta 0.05 -> 0.1: 2.07
+
+=== 4. L = 3 toric code: repair chosen without knowing the sign ===
+ Fitted unitary repair at the right and the wrong sign, and no repair (upper bounds):
+ theta  right sign   wrong sign   no repair
+ 0.05   1.457e-05    7.569e-04    3.819e-04
+ 0.10   2.555e-04    6.138e-03    3.077e-03
+ 0.20   5.229e-03    5.107e-02    2.593e-02
+ 0.30   3.206e-02    1.724e-01    9.051e-02
+ Best repair over all channels, as [lower bound, achieved upper bound]:
+ theta  sign known,            both signs,            sign known,            both signs,
+        history discarded      history discarded      history used           history used
+ 0.05   [1.411e-05, 1.457e-05]  [3.772e-04, 3.776e-04]  [2.907e-08, 9.875e-07]  [3.723e-04, 3.730e-04]   (20 classes)
+ 0.10   [2.553e-04, 2.555e-04]  [3.077e-03, 3.077e-03]  [4.948e-06, 7.163e-06]  [2.926e-03, 2.927e-03]   (20 classes)
+ 0.20   [5.228e-03, 5.229e-03]  [2.593e-02, 2.593e-02]  [2.639e-04, 2.652e-04]  [2.165e-02, 2.165e-02]   (20 classes)
+ 0.30   [3.203e-02, 3.206e-02]  [9.051e-02, 9.051e-02]  [2.436e-03, 2.437e-03]  [6.445e-02, 6.445e-02]   (20 classes)
+ (history used: one repair per class of syndromes whose branches agree up to weight;
+  one round only; bounds are floating-point computations, not interval-certified)
+ History used, lower bounds over every individual syndrome, without grouping
+ (same dual point, dual constraint made feasible syndrome by syndrome; upper bounds as above,
+  since one repair per class is a policy over individual syndromes):
+ theta  sign known, history used     both signs, history used
+ 0.05   [-3.2453e-07, 9.8754e-07]   [3.7199e-04, 3.7296e-04]   (256 syndromes)
+ 0.10   [4.5974e-06, 7.1631e-06]   [2.9243e-03, 2.9266e-03]   (256 syndromes)
+ 0.20   [2.6382e-04, 2.6521e-04]   [2.1649e-02, 2.1652e-02]   (256 syndromes)
+ 0.30   [2.4357e-03, 2.4369e-03]   [6.4452e-02, 6.4452e-02]   (256 syndromes)
+ (a negative lower bound is uninformative)
+
+=== 5. Three-qubit repetition code: exact blindness without exact preservation ===
+ theta  input dependence, all 3-round histories   eps_id     LB(id)     completeness
+ 0.05   1.1e-16                               6.277e-05  6.247e-05  2e-16
+ 0.10   1.1e-16                               4.989e-04  4.989e-04  4e-16
+ 0.15   8.7e-19                               1.679e-03  1.679e-03  4e-16
+ 0.20   2.2e-16                               3.965e-03  3.965e-03  2e-16
+ 0.30   1.1e-16                               1.324e-02  1.324e-02  6e-16
+ 0.40   6.9e-18                               3.090e-02  3.090e-02  5e-19
+ 0.50   1.1e-16                               5.917e-02  5.917e-02  1e-18
+
+=== 6. Sentinel qubit: sign discrimination (+theta vs -theta), Y-basis readout ===
+ theta  per-shot TV = sin(theta)   TV after N shots, N = 1, 10, 100
+ 0.05   0.0500                     0.0500   0.1226   0.3821
+ 0.10   0.0998                     0.0998   0.2424   0.6819
+ 0.15   0.1494                     0.1494   0.3570   0.8661
+ 0.20   0.1987                     0.1987   0.4641   0.9547
+ 0.30   0.2955                     0.2955   0.6490   0.9974
+ 0.40   0.3894                     0.3894   0.7892   0.9999
+ 0.50   0.4794                     0.4794   0.8852   1.0000
+ The passive syndrome record's sign profile is identically 0 (see ozguler_prop1_check.py).
+
+=== Summary ===
+PASS  SDP agrees with closed form (to 1e-6)
+PASS  one round: leak <= 2 sqrt(eps) at every angle
+PASS  one round: effects of parity form (leak exact)
+PASS  N rounds: leak_N <= 2 sqrt(||Lam^N - id||)
+PASS  N rounds: ||Lam^N - id|| <= N eps_id
+PASS  N rounds: effects of parity form (leak exact)
+PASS  record leak <= complement distance <= 2 sqrt(eps_dec)
+PASS  sign-blind repair, history used, more than twice the known-sign optimum
+PASS  sign-blind lower bound, history used, holds over all syndromes without grouping (within 1 per cent)
+PASS  fitted unitary repair within 5 per cent of the known-sign lower bound
+PASS  no repair within 3 per cent of the sign-blind lower bound, history discarded
+PASS  using the history helps the sign-blind repair less than the known-sign one
+PASS  repetition code: every history law independent of the encoded state
+PASS  repetition code: logical channel differs from the identity
+SDP solves not reported 'optimal' by the solver: 47 (optimal_inaccurate). Reported distances are upper bounds constructed independently of solver tolerance, and verdicts use explicit lower bounds; both are floating-point estimates, not interval-certified.

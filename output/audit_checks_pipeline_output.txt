@@ -1,5 +1,5 @@
 === Run configuration ===
-script version = 0.1.0
+script version = 0.6.1
 Python version = 3.12.3
 Stim version = 1.16.0
 PyMatching version = 2.4.0

@@ -1,5 +1,5 @@
 === Run configuration ===
-script version = 0.1.0
+script version = 0.6.1
 Python version = 3.12.3
 NumPy version = 2.4.4
 theta = 0.1; input seed = 1; unequal-angle seed = 7
