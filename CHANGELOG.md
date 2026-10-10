@@ -14,7 +14,11 @@ Removes the dependence of the history-used lower bounds on the grouping of syndr
 
 ### All scripts
 
-- Version raised to 0.6.1. No other changes to the four other scripts. The reference outputs of `blind_by_design_continuous_misspecification.py` now keep the elapsed-time line the script prints, as the run produced it.
+- Version raised to 0.6.1. No other changes to the four other scripts.
+
+### `README.md`
+
+- Setup uses `python3 -m venv`, with a note for systems (including macOS) where `python` is not on the path until the environment is activated. Run time of `prop52_numerical_check.py` corrected to about 20 to 30 minutes. Records a cross-platform rerun of `prop52_numerical_check.py` on macOS (Python 3.14.7, NumPy 2.5.3): all checks pass, with brackets consistent with the reference. The reference outputs of `blind_by_design_continuous_misspecification.py` now keep the elapsed-time line the script prints, as the run produced it.
 
 ## 0.6.0 — 2026-10-08
 

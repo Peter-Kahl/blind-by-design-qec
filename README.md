@@ -120,10 +120,12 @@ The analytical and interpretive claims depend on the definitions, assumptions an
 - Stim and PyMatching (`audit_checks.py` only)
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
+
+On macOS and some Linux systems the interpreter is called `python3`, and a bare `python` gives 'command not found'. Create the environment with `python3` as above; once it is activated, `python` refers to the environment's interpreter and the commands below work as written. The reference runs used Python 3.12; current NumPy releases need Python 3.11 or later.
 
 No external data are needed: every script generates its own data.
 
@@ -138,7 +140,7 @@ python blind_by_design_continuous_misspecification.py
 python blind_by_design_continuous_misspecification.py --kappa 1
 ```
 
-`prop52_numerical_check.py` imports `ozguler_prop1_check.py`, so run it from the repository folder. The last command reproduces the parameter-sensitivity figures quoted in §6.4.2. Run times on a laptop are seconds for the repetition-code and continuous scripts, under a minute for the toric-code check and for the audit without `--lemma-checks`, and about one to two minutes each for `prop52_numerical_check.py` and for the audit with `--lemma-checks`. `audit_checks.py` also has a `--mirror` mode, a mode for saved `.stim` circuits, and a self-contained demonstration when run without arguments; the demonstration uses a different circuit and does not reproduce the paper's figures. Use `--help` on either of the two scripts with options.
+`prop52_numerical_check.py` imports `ozguler_prop1_check.py`, so run it from the repository folder. The last command reproduces the parameter-sensitivity figures quoted in §6.4.2. Run times on a laptop are seconds for the repetition-code and continuous scripts, under a minute for the toric-code check and for the audit without `--lemma-checks`, about one to two minutes for the audit with `--lemma-checks`, and about 20 to 30 minutes for `prop52_numerical_check.py`, most of it in section 4, the optimal repairs. `audit_checks.py` also has a `--mirror` mode, a mode for saved `.stim` circuits, and a self-contained demonstration when run without arguments; the demonstration uses a different circuit and does not reproduce the paper's figures. Use `--help` on either of the two scripts with options.
 
 ## Reference output
 
@@ -161,6 +163,8 @@ diff -u output/ozguler_prop1_check_output.txt my_run.txt
 ```
 
 Exact textual identity is not guaranteed across Python, NumPy, Stim, PyMatching, CVXPY, solver or platform versions. Differences in the last digits of quantities at the level of floating-point rounding (around 10⁻¹⁶ or smaller) do not indicate a failure to reproduce. Diamond distances in `prop52_numerical_check.py` are computed by an iterative solver, and may differ in the third or fourth significant figure across solver versions; the solver reports some solves as 'optimal_inaccurate'. Its pass/fail verdicts do not depend on either, because of the bounds described above.
+
+As a cross-platform check, `prop52_numerical_check.py` version 0.6.1 was also run on macOS with Python 3.14.7, NumPy 2.5.3, CVXPY 1.9.3 and Clarabel 0.11.1. All 14 checks passed, sections 1–3 and 5–6 matched the reference output to rounding, and every optimal-repair bracket in section 4 was consistent with the reference, with some lower bounds slightly lower: the fitted repair at θ = 0.05 came within 4 per cent of the optimum rather than 3, and within 0.5 per cent at θ = 0.1.
 
 ## Reproducibility
 
