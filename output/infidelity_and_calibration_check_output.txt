@@ -1,5 +1,5 @@
 === Run configuration ===
-script version = 0.8.0
+script version = 0.9.0
 Python version = 3.12.3
 NumPy version = 2.4.4
 CVXPY version = 1.9.3
@@ -12,51 +12,53 @@ diamond norm unnormalised, range [0, 2]; infidelity = 1 - entanglement fidelity
  [lower bound, achieved upper bound]; 'no repair' is exact
  theta  no repair    sign known,              both signs,              sign known,              both signs,
                      history discarded        history discarded        history used             history used
- 0.05   7.264e-06    [7.246e-06, 7.247e-06]   [7.264e-06, 7.264e-06]   [-2.924e-08, 4.309e-07]   [7.238e-06, 7.264e-06]
- 0.10   1.269e-04    [1.257e-04, 1.257e-04]   [1.269e-04, 1.269e-04]   [2.485e-06, 4.012e-06]   [1.269e-04, 1.269e-04]
- 0.20   2.605e-03    [2.524e-03, 2.524e-03]   [2.605e-03, 2.605e-03]   [1.319e-04, 1.325e-04]   [2.597e-03, 2.597e-03]
+ 0.05   7.264e-06    [7.246e-06, 7.247e-06]   [7.264e-06, 7.264e-06]   [-2.924e-08, 4.221e-08]   [7.238e-06, 7.264e-06]
+ 0.10   1.269e-04    [1.257e-04, 1.257e-04]   [1.269e-04, 1.269e-04]   [2.485e-06, 2.487e-06]   [1.269e-04, 1.269e-04]
+ 0.20   2.605e-03    [2.524e-03, 2.524e-03]   [2.605e-03, 2.605e-03]   [1.319e-04, 1.319e-04]   [2.597e-03, 2.597e-03]
  0.30   1.637e-02    [1.546e-02, 1.546e-02]   [1.637e-02, 1.637e-02]   [1.218e-03, 1.218e-03]   [1.597e-02, 1.597e-02]
+ (sign known, history used: upper end is the better of the solver's repairs and the
+  branch-undo repair; branch undo alone gives 4.221e-08 at 0.05, 2.487e-06 at 0.1, 1.319e-04 at 0.2, 1.218e-03 at 0.3)
  Ratio, sign-blind lower bound / sign-known upper bound (history used):
-  theta 0.05: 16.8   (sign known, history discarded, improves on no repair by 0.3 per cent at most)
-  theta 0.10: 31.6   (sign known, history discarded, improves on no repair by 0.9 per cent at most)
-  theta 0.20: 19.6   (sign known, history discarded, improves on no repair by 3.1 per cent at most)
+  theta 0.05: 171.5   (sign known, history discarded, improves on no repair by 0.3 per cent at most)
+  theta 0.10: 51.0   (sign known, history discarded, improves on no repair by 0.9 per cent at most)
+  theta 0.20: 19.7   (sign known, history discarded, improves on no repair by 3.1 per cent at most)
   theta 0.30: 13.1   (sign known, history discarded, improves on no repair by 5.5 per cent at most)
 
 === 2. Infidelity after N rounds, repair applied every round ===
- Policies: none; fitted unitary at the right / wrong sign; history-used repair with the sign
- known; history-used repair minimising the worst-sign diamond defect for both signs (worse
- sign shown); logical Pauli twirl of
- the unrepaired channel (idealised). Exact powers of the one-round channel.
+ Policies: none; fitted unitary at the right / wrong sign; diamond-optimal history-used repair
+ with the sign known; branch undo with the sign known; history-used repair minimising the
+ worst-sign diamond defect for both signs (worse sign shown); logical Pauli twirl of the
+ unrepaired channel (idealised). Exact powers of the one-round channel.
 
  theta = 0.05
-  N     none                     fitted, right sign       fitted, wrong sign       known sign, history      both signs, diamond-opt  twirled, no repair       
-  1     7.264e-06                7.247e-06                7.318e-06                4.894e-07                6.768e-05                7.264e-06                
-  10    7.424e-05                7.246e-05                7.958e-05                4.894e-06                6.781e-04                7.264e-05                
-  30    2.334e-04                2.174e-04                2.814e-04                1.468e-05                2.043e-03                2.179e-04                
-  100   9.020e-04                7.243e-04                1.435e-03                4.894e-05                6.907e-03                7.261e-04                
-  300   3.765e-03                2.170e-03                8.538e-03                1.468e-04                2.154e-02                2.176e-03                
-  growth from N = 10 to 100: no repair x12.1; twirled x10.0; known sign, history x10.0
-  ratio, best sign-blind policy computed / known sign, history used:
-    N = 1    15
-    N = 10   15
-    N = 30   15
-    N = 100  15
-    N = 300  15
+  N     none                     fitted, right sign       fitted, wrong sign       known sign, history      known sign, branch undo  both signs, diamond-opt  twirled, no repair       
+  1     7.264e-06                7.247e-06                7.318e-06                4.894e-07                4.221e-08                6.768e-05                7.264e-06                
+  10    7.424e-05                7.246e-05                7.958e-05                4.894e-06                4.221e-07                6.781e-04                7.264e-05                
+  30    2.334e-04                2.174e-04                2.814e-04                1.468e-05                1.266e-06                2.043e-03                2.179e-04                
+  100   9.020e-04                7.243e-04                1.435e-03                4.894e-05                4.221e-06                6.907e-03                7.261e-04                
+  300   3.765e-03                2.170e-03                8.538e-03                1.468e-04                1.266e-05                2.154e-02                2.176e-03                
+  growth from N = 10 to 100: no repair x12.1; twirled x10.0; known sign, branch undo x10.0
+  ratio, best sign-blind policy computed / best known-sign policy computed:
+    N = 1    172
+    N = 10   172
+    N = 30   172
+    N = 100  172
+    N = 300  172
 
  theta = 0.10
-  N     none                     fitted, right sign       fitted, wrong sign       known sign, history      both signs, diamond-opt  twirled, no repair       
-  1     1.269e-04                1.257e-04                1.305e-04                3.578e-06                6.983e-04                1.269e-04                
-  10    1.374e-03                1.256e-03                1.726e-03                3.578e-05                7.044e-03                1.268e-03                
-  30    4.814e-03                3.762e-03                7.963e-03                1.073e-04                2.152e-02                3.797e-03                
-  100   2.394e-02                1.246e-02                5.770e-02                3.577e-04                7.579e-02                1.258e-02                
-  300   1.324e-01                3.670e-02                3.729e-01                1.073e-03                2.501e-01                3.703e-02                
-  growth from N = 10 to 100: no repair x17.4; twirled x9.9; known sign, history x10.0
-  ratio, best sign-blind policy computed / known sign, history used:
-    N = 1    35
-    N = 10   35
-    N = 30   35
-    N = 100  35
-    N = 300  35
+  N     none                     fitted, right sign       fitted, wrong sign       known sign, history      known sign, branch undo  both signs, diamond-opt  twirled, no repair       
+  1     1.269e-04                1.257e-04                1.305e-04                3.578e-06                2.487e-06                6.983e-04                1.269e-04                
+  10    1.374e-03                1.256e-03                1.726e-03                3.578e-05                2.487e-05                7.044e-03                1.268e-03                
+  30    4.814e-03                3.762e-03                7.963e-03                1.073e-04                7.461e-05                2.152e-02                3.797e-03                
+  100   2.394e-02                1.246e-02                5.770e-02                3.577e-04                2.487e-04                7.579e-02                1.258e-02                
+  300   1.324e-01                3.670e-02                3.729e-01                1.073e-03                7.456e-04                2.501e-01                3.703e-02                
+  growth from N = 10 to 100: no repair x17.4; twirled x9.9; known sign, branch undo x10.0
+  ratio, best sign-blind policy computed / best known-sign policy computed:
+    N = 1    51
+    N = 10   51
+    N = 30   51
+    N = 100  51
+    N = 300  50
 
  Note: 'both signs, diamond-opt' minimises the worst-sign diamond defect, which is nearly
  degenerate (no repair is within 3 per cent of it); the solver's choice among near-optimal
@@ -67,32 +69,51 @@ diamond norm unnormalised, range [0, 2]; infidelity = 1 - entanglement fidelity
  One-round diamond defect [entangled-input lower bound, upper bound]
 
  theta = 0.05; no repair 3.819e-04
-  eta       fitted unitary, history discarded     known-sign optimal, history used
-  +0.000    [1.449e-05, 1.457e-05]              [9.793e-07, 9.886e-07]
-  +0.001    [1.452e-05, 1.463e-05]              [9.813e-07, 9.893e-07]
-  +0.010    [1.719e-05, 1.855e-05]              [1.005e-06, 1.015e-06]
-  +0.100    [9.301e-05, 1.865e-04]              [4.564e-06, 6.181e-06]
-  -0.010    [1.709e-05, 1.840e-05]              [9.670e-07, 9.822e-07]
+  eta       fitted unitary, history discarded     known-sign optimal, history used     branch undo
+  +0.000    [1.449e-05, 1.457e-05]              [9.793e-07, 9.886e-07]             [8.442e-08, 8.452e-08]
+  +0.001    [1.452e-05, 1.463e-05]              [9.813e-07, 9.893e-07]             [8.444e-08, 8.454e-08]
+  +0.010    [1.719e-05, 1.855e-05]              [1.005e-06, 1.015e-06]             [1.015e-07, 1.085e-07]
+  +0.100    [9.301e-05, 1.865e-04]              [4.564e-06, 6.181e-06]             [4.199e-06, 5.829e-06]
+  -0.010    [1.709e-05, 1.840e-05]              [9.670e-07, 9.822e-07]             [1.013e-07, 1.082e-07]
   gap to no repair at eta = +0.001: at least 386-fold
   gap to no repair at eta = +0.010: at least 376-fold
   gap to no repair at eta = +0.100: at least 62-fold
+  Entanglement infidelity after N rounds, repair every round (diamond-optimal history-used / branch undo):
+  eta      N = 1                       N = 100                     N = 300                     
+  +0.000   4.894e-07 / 4.221e-08      4.894e-05 / 4.221e-06      1.468e-04 / 1.266e-05      
+  +0.001   4.904e-07 / 4.222e-08      4.904e-05 / 4.222e-06      1.471e-04 / 1.267e-05      
+  +0.010   5.015e-07 / 4.293e-08      5.015e-05 / 4.292e-06      1.504e-04 / 1.288e-05      
+  +0.100   4.696e-07 / 1.136e-07      4.700e-05 / 1.141e-05      1.413e-04 / 3.447e-05      
+  -0.010   4.824e-07 / 4.293e-08      4.824e-05 / 4.293e-06      1.447e-04 / 1.288e-05      
+  twirled, no repair (best sign-blind policy computed): 7.264e-06, 7.261e-04, 2.176e-03
+  largest change in 300-round branch-undo infidelity over the eta grid: x2.72
 
  theta = 0.10; no repair 3.077e-03
-  eta       fitted unitary, history discarded     known-sign optimal, history used
-  +0.000    [2.516e-04, 2.555e-04]              [7.159e-06, 7.163e-06]
-  +0.001    [2.517e-04, 2.556e-04]              [7.866e-06, 7.874e-06]
-  +0.010    [2.629e-04, 2.722e-04]              [6.383e-06, 6.385e-06]
-  +0.100    [8.153e-04, 1.062e-03]              [3.728e-05, 1.186e-04]
-  -0.010    [2.625e-04, 2.714e-04]              [6.304e-06, 6.306e-06]
+  eta       fitted unitary, history discarded     known-sign optimal, history used     branch undo
+  +0.000    [2.516e-04, 2.555e-04]              [7.159e-06, 7.163e-06]             [4.974e-06, 4.975e-06]
+  +0.001    [2.517e-04, 2.556e-04]              [7.866e-06, 7.874e-06]             [4.975e-06, 4.976e-06]
+  +0.010    [2.629e-04, 2.722e-04]              [6.383e-06, 6.385e-06]             [5.020e-06, 5.029e-06]
+  +0.100    [8.153e-04, 1.062e-03]              [3.728e-05, 1.186e-04]             [3.655e-05, 1.174e-04]
+  -0.010    [2.625e-04, 2.714e-04]              [6.304e-06, 6.306e-06]             [5.018e-06, 5.033e-06]
   gap to no repair at eta = +0.001: at least 391-fold
   gap to no repair at eta = +0.010: at least 482-fold
   gap to no repair at eta = +0.100: at least 26-fold
+  Entanglement infidelity after N rounds, repair every round (diamond-optimal history-used / branch undo):
+  eta      N = 1                       N = 100                     N = 300                     
+  +0.000   3.578e-06 / 2.487e-06      3.577e-04 / 2.487e-04      1.073e-03 / 7.456e-04      
+  +0.001   3.931e-06 / 2.487e-06      3.930e-04 / 2.487e-04      1.178e-03 / 7.457e-04      
+  +0.010   3.182e-06 / 2.499e-06      3.182e-04 / 2.499e-04      9.540e-04 / 7.492e-04      
+  +0.100   4.336e-06 / 3.682e-06      4.362e-04 / 3.708e-04      1.324e-03 / 1.128e-03      
+  -0.010   3.144e-06 / 2.499e-06      3.143e-04 / 2.499e-04      9.424e-04 / 7.492e-04      
+  twirled, no repair (best sign-blind policy computed): 1.269e-04, 1.258e-02, 3.703e-02
+  largest change in 300-round branch-undo infidelity over the eta grid: x1.51
 
 === Summary ===
 PASS  infidelity: sign-blind, history used, more than twice the known-sign optimum
 PASS  infidelity: brackets ordered (lower <= upper)
 PASS  accumulation: unrepaired infidelity grows faster than the twirled channel's, which grows linearly (10 -> 100 rounds, within 5 per cent)
-PASS  accumulation: known-sign history-used repair below every sign-blind policy computed, at every N
+PASS  accumulation: best known-sign policy below every sign-blind policy computed, at every N
 PASS  calibration: known-sign repair at 1 per cent error still beats no repair
-SDP solves not reported 'optimal' by the solver: 40 (optimal_inaccurate). Brackets and defects are constructed independently of solver tolerance; floating-point estimates, not interval-certified.
-(elapsed 415 s)
+FAIL  calibration: over 300 rounds, a calibration error up to 10 per cent changes branch-undo infidelity by less than a factor of 2, and it stays 10 times below the twirl
+SDP solves not reported 'optimal' by the solver: 42 (optimal_inaccurate). Brackets and defects are constructed independently of solver tolerance; floating-point estimates, not interval-certified.
+(elapsed 447 s)

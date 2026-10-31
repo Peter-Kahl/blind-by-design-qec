@@ -5,7 +5,7 @@ infidelity_and_calibration_check.py
 ===================================
 
 Version:
-    0.8.0 (2026-10-31)
+    0.9.0 (2026-10-31)
 
 Supplementary research code for:
 
@@ -43,8 +43,16 @@ the same L = 3 toric instrument (Özgüler 2026):
    diamond-optimal history-used repairs with and without the sign; and, for
    reference, an idealised logical Pauli twirl of the unrepaired channel?
 3. Calibration error. The sign-known repairs assume theta is known exactly.
-   How large is the one-round defect when the repair is fitted at
-   theta (1 + eta) but the channel is at theta?
+   How large is the one-round defect, and the infidelity after up to 300
+   rounds, when the repair is fitted at theta (1 + eta) but the channel is
+   at theta?
+
+Version 0.9.0 adds the branch-undo repair throughout: for each syndrome,
+the inverse of the nearest unitary to that branch's Kraus operator, fitted
+with the sign known. Each branch is a coherent logical rotation
+(branch_mechanism_check.py), so this simple repair removes almost all of
+the one-round infidelity; it is a feasible sign-known, history-used policy,
+and it tightens the upper end of the infidelity brackets.
 
 Methods
 -------
@@ -103,7 +111,7 @@ from prop52_numerical_check import (SOLVER, SOLVER_FLAGS, adjoint_map, choi,
                                     fitted_unitary_decoder, identity_choi,
                                     kraus_from_choi, syndrome_classes)
 
-SCRIPT_VERSION = "0.8.0"
+SCRIPT_VERSION = "0.9.0"
 
 DIM = 4
 N2 = DIM * DIM
@@ -114,6 +122,7 @@ ACCUMULATION_THETAS = (0.05, 0.1)
 ROUNDS = (1, 10, 30, 100, 300)
 CALIBRATION_THETAS = (0.05, 0.1)
 ETAS = (0.0, 0.001, 0.01, 0.1, -0.01)
+CALIBRATION_ROUNDS = (1, 100, 300)
 
 PAULI_1 = [np.eye(2), np.array([[0, 1], [1, 0]]), np.array([[0, -1j], [1j, 0]]),
            np.diag([1, -1])]
@@ -216,7 +225,7 @@ def report_infidelity(inst, passed):
           "sign known,              both signs,")
     print("                     history discarded        history discarded        "
           "history used             history used")
-    rows = {}
+    rows, undo_rows = {}, {}
     for theta in FIDELITY_THETAS:
         kp, km, classes = class_data(inst, theta)
         lp, lm = list(kp.values()), list(km.values())
@@ -224,10 +233,16 @@ def report_infidelity(inst, passed):
         kd = fidelity_bracket([[lp]])
         bd = fidelity_bracket([[lp, lm]])
         kh = fidelity_bracket([[[kp[s] for s in c]] for c in classes])
+        undo = 1 - ent_fidelity(apply_policy(branch_undo_policy(kp), kp))
+        kh = (kh[0], min(kh[1], undo))      # branch undo is a feasible sign-known policy
         bh = fidelity_bracket([[[kp[s] for s in c], [km[s] for s in c]] for c in classes])
         rows[theta] = (none, kd, bd, kh, bh)
+        undo_rows[theta] = undo
         print(f" {theta:4.2f}   {none:.3e}    [{kd[0]:.3e}, {kd[1]:.3e}]   [{bd[0]:.3e}, {bd[1]:.3e}]   "
               f"[{kh[0]:.3e}, {kh[1]:.3e}]   [{bh[0]:.3e}, {bh[1]:.3e}]")
+    print(" (sign known, history used: upper end is the better of the solver's repairs and the")
+    print("  branch-undo repair; branch undo alone gives " +
+          ", ".join(f"{undo_rows[t]:.3e} at {t}" for t in FIDELITY_THETAS) + ")")
     print(" Ratio, sign-blind lower bound / sign-known upper bound (history used):")
     for theta, (none, kd, bd, kh, bh) in rows.items():
         print(f"  theta {theta:4.2f}: {bh[0] / kh[1]:.1f}   "
@@ -275,6 +290,16 @@ def apply_policy(syndrome_repairs, kraus):
     return [R @ kraus[s] for s in kraus for R in syndrome_repairs[s]]
 
 
+def branch_undo_policy(kraus):
+    """Sign-known, history-used repair: for each syndrome, the inverse of the
+    nearest unitary to that branch's Kraus operator."""
+    out = {}
+    for s, K in kraus.items():
+        u, _, vh = np.linalg.svd(K)
+        out[s] = [(u @ vh).conj().T]
+    return out
+
+
 def twirl_superop(S):
     return sum(np.kron(P.conj().T, P.T) @ S @ np.kron(P, P.conj()) for P in PAULIS) / len(PAULIS)
 
@@ -285,10 +310,10 @@ def twirl_superop(S):
 
 def report_accumulation(inst, passed):
     print("\n=== 2. Infidelity after N rounds, repair applied every round ===")
-    print(" Policies: none; fitted unitary at the right / wrong sign; history-used repair with the sign")
-    print(" known; history-used repair minimising the worst-sign diamond defect for both signs (worse")
-    print(" sign shown); logical Pauli twirl of")
-    print(" the unrepaired channel (idealised). Exact powers of the one-round channel.")
+    print(" Policies: none; fitted unitary at the right / wrong sign; diamond-optimal history-used repair")
+    print(" with the sign known; branch undo with the sign known; history-used repair minimising the")
+    print(" worst-sign diamond defect for both signs (worse sign shown); logical Pauli twirl of the")
+    print(" unrepaired channel (idealised). Exact powers of the one-round channel.")
     ok_growth, ok_order = True, True
     for theta in ACCUMULATION_THETAS:
         kp, km, classes = class_data(inst, theta)
@@ -302,6 +327,7 @@ def report_accumulation(inst, passed):
             "fitted, right sign": superop([W @ K for K in lp]),
             "fitted, wrong sign": superop([W @ K for K in lm]),
             "known sign, history": superop(apply_policy(known, kp)),
+            "known sign, branch undo": superop(apply_policy(branch_undo_policy(kp), kp)),
             "both signs, diamond-opt": [superop(apply_policy(blind, kp)), superop(apply_policy(blind, km))],
             "twirled, no repair": twirl_superop(superop(lp)),
         }
@@ -322,16 +348,19 @@ def report_accumulation(inst, passed):
         growth = values["none"][i100] / values["none"][i10]
         growth_t = values["twirled, no repair"][i100] / values["twirled, no repair"][i10]
         print(f"  growth from N = 10 to 100: no repair x{growth:.1f}; twirled x{growth_t:.1f}; "
-              f"known sign, history x{values['known sign, history'][i100] / values['known sign, history'][i10]:.1f}")
+              f"known sign, branch undo "
+              f"x{values['known sign, branch undo'][i100] / values['known sign, branch undo'][i10]:.1f}")
         # Sign-blind policies computed here: no repair, the twirl, and the
         # diamond-optimal sign-blind repair. ('Fitted, wrong sign' is a guess,
         # not a policy that serves both signs.)
         blind_names = ("none", "twirled, no repair", "both signs, diamond-opt")
-        print("  ratio, best sign-blind policy computed / known sign, history used:")
+        known_names = ("known sign, history", "known sign, branch undo")
+        print("  ratio, best sign-blind policy computed / best known-sign policy computed:")
         for i, N in enumerate(ROUNDS):
             best_blind = min(values[n][i] for n in blind_names)
-            print(f"    N = {N:<4} {best_blind / values['known sign, history'][i]:.0f}")
-            ok_order &= values["known sign, history"][i] < best_blind
+            best_known = min(values[n][i] for n in known_names)
+            print(f"    N = {N:<4} {best_blind / best_known:.0f}")
+            ok_order &= best_known < best_blind
         ok_growth &= growth > growth_t and abs(growth_t - 10) < 0.5
     print("\n Note: 'both signs, diamond-opt' minimises the worst-sign diamond defect, which is nearly")
     print(" degenerate (no repair is within 3 per cent of it); the solver's choice among near-optimal")
@@ -339,7 +368,7 @@ def report_accumulation(inst, passed):
     print(" by one-round infidelity is no repair, to within the bracket.")
     passed.append(("accumulation: unrepaired infidelity grows faster than the twirled channel's, which "
                    "grows linearly (10 -> 100 rounds, within 5 per cent)", ok_growth))
-    passed.append(("accumulation: known-sign history-used repair below every sign-blind policy computed, "
+    passed.append(("accumulation: best known-sign policy below every sign-blind policy computed, "
                    "at every N", ok_order))
 
 
@@ -350,28 +379,53 @@ def report_accumulation(inst, passed):
 def report_calibration(inst, passed):
     print("\n=== 3. Calibration error: repairs fitted at theta (1 + eta), channel at theta ===")
     print(" One-round diamond defect [entangled-input lower bound, upper bound]")
-    ok = True
+    ok, ok_multi = True, True
     for theta in CALIBRATION_THETAS:
         kp, km, classes = class_data(inst, theta)
         lp = list(kp.values())
         none = diamond_norm_of_difference(choi(lp, DIM) - OMEGA, DIM)
         print(f"\n theta = {theta:.2f}; no repair {none:.3e}")
-        print("  eta       fitted unitary, history discarded     known-sign optimal, history used")
-        results = {}
+        print("  eta       fitted unitary, history discarded     known-sign optimal, history used     "
+              "branch undo")
+        results, multi = {}, {}
         for eta in ETAS:
             kq, kqm, cq = class_data(inst, theta * (1 + eta))
             Wq = fitted_unitary_decoder(list(kq.values()), DIM)
             Dw = choi([Wq @ K for K in lp], DIM) - OMEGA
             policy = per_syndrome(diamond_policy([[[kq[s] for s in c]] for c in cq]), cq)
             Dh = choi(apply_policy(policy, kp), DIM) - OMEGA
+            undo = branch_undo_policy(kq)
+            Du = choi(apply_policy(undo, kp), DIM) - OMEGA
             w = (entangled_input_lower_bound(Dw, DIM), diamond_norm_of_difference(Dw, DIM))
             h = (entangled_input_lower_bound(Dh, DIM), diamond_norm_of_difference(Dh, DIM))
+            u = (entangled_input_lower_bound(Du, DIM), diamond_norm_of_difference(Du, DIM))
             results[eta] = h
-            print(f"  {eta:+.3f}    [{w[0]:.3e}, {w[1]:.3e}]              [{h[0]:.3e}, {h[1]:.3e}]")
+            S_h, S_u = superop(apply_policy(policy, kp)), superop(apply_policy(undo, kp))
+            multi[eta] = [(1 - ent_fidelity_superop(np.linalg.matrix_power(S_h, N)),
+                           1 - ent_fidelity_superop(np.linalg.matrix_power(S_u, N)))
+                          for N in CALIBRATION_ROUNDS]
+            print(f"  {eta:+.3f}    [{w[0]:.3e}, {w[1]:.3e}]              [{h[0]:.3e}, {h[1]:.3e}]"
+                  f"             [{u[0]:.3e}, {u[1]:.3e}]")
         for eta in (0.001, 0.01, 0.1):
             print(f"  gap to no repair at eta = {eta:+.3f}: at least {none / results[eta][1]:.0f}-fold")
         ok &= results[0.01][1] < none
+        lp_none = superop(lp)
+        twirled = twirl_superop(lp_none)
+        print("  Entanglement infidelity after N rounds, repair every round "
+              "(diamond-optimal history-used / branch undo):")
+        print("  eta      " + "".join(f"N = {N:<24}" for N in CALIBRATION_ROUNDS))
+        for eta in ETAS:
+            print(f"  {eta:+.3f}   " + "".join(f"{a:.3e} / {b:.3e}      " for a, b in multi[eta]))
+        tw = [1 - ent_fidelity_superop(np.linalg.matrix_power(twirled, N)) for N in CALIBRATION_ROUNDS]
+        print("  twirled, no repair (best sign-blind policy computed): " +
+              ", ".join(f"{v:.3e}" for v in tw))
+        i300 = CALIBRATION_ROUNDS.index(300)
+        change = max(multi[eta][i300][1] / multi[0.0][i300][1] for eta in ETAS)
+        print(f"  largest change in 300-round branch-undo infidelity over the eta grid: x{change:.2f}")
+        ok_multi &= all(multi[eta][i300][1] < tw[i300] / 10 for eta in ETAS)
     passed.append(("calibration: known-sign repair at 1 per cent error still beats no repair", ok))
+    passed.append(("calibration: over 300 rounds, with a calibration error up to 10 per cent, branch-undo "
+                   "infidelity stays more than 10 times below the twirl", ok_multi))
 
 
 def main() -> None:

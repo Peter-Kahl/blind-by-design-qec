@@ -25,7 +25,7 @@ The paper asks when evidence a system lacks marks a defect in how it inquires, a
 
 Two propositions carry the function-relative case. Proposition 5.1 shows that an inquiry which performs its required operation exactly produces a classical record that is the same for every encoded state. Proposition 5.2 extends this to inquiries that perform the operation only approximately: if the inquiry falls short of its function by ε in diamond norm, after the best possible repair, its complete record distinguishes encoded states with total-variation distance at most 2√ε, and the shortfalls add over rounds.
 
-This repository contains the five scripts behind the paper's computations, two further scripts extending one of them for the technical companion, the complete output of each reference run, and the reliance note on the preprint result the paper uses.
+This repository contains the five scripts behind the paper's computations, three further scripts extending one of them for the technical companion, the complete output of each reference run, and the reliance note on the preprint result the paper uses.
 
 ## Contents and correspondence with the paper
 
@@ -37,7 +37,8 @@ This repository contains the five scripts behind the paper's computations, two f
 | `audit_checks.py` | §6.4.1; Appendix A | Construction audit of the surface-code simulations |
 | `blind_by_design_continuous_misspecification.py` | §6.4.2 | Model-relative blindness, detected and repaired from the records already held |
 | `two_round_repair_check.py` | Companion note, §3 (extends §5.3.1, Table 7) | Pointwise versus uniform repair over two rounds of the toric instrument, with the two-round syndrome history discarded or used |
-| `infidelity_and_calibration_check.py` | Companion note, §3 | The same comparison by entanglement infidelity; infidelity accumulated over up to 300 rounds, against an idealised logical twirl; sensitivity of the known-sign repairs to calibration error |
+| `branch_mechanism_check.py` | Companion note, §3 | Why the sign matters: each syndrome branch is a coherent logical rotation whose direction reverses with the sign; branch-undo repair in infidelity and diamond norm |
+| `infidelity_and_calibration_check.py` | Companion note, §3 | The same comparison by entanglement infidelity; infidelity accumulated over up to 300 rounds, against an idealised logical twirl; sensitivity of the known-sign repairs to calibration error, over one and many rounds |
 
 ## The scripts
 
@@ -72,15 +73,33 @@ The 256² two-round histories are formed from ordered pairs of the 20 one-round 
 
 In the reference run at θ = 0.1, using the two-round history lowers the sign-blind defect by about 5 per cent (from 6.15 × 10⁻³ with no repair to at least 5.84 × 10⁻³), against about 6 per cent in one round. The best known-sign repair reaches 1.8 × 10⁻⁵ or better, so the sign-blind optimum is more than 330 times larger; the one-round ratio at the same angle lies between about 400 and 630, the two-round ratio between about 330 and 600, and the brackets overlap. Every defect roughly doubles from one round to two. At θ = 0.05 the known-sign, history-used bracket is too wide to be informative (lower end about 40 times below the upper end), because the defects are of order 10⁻⁶ and the solver reports its solutions as 'optimal_inaccurate'; only its upper end is used.
 
+### `branch_mechanism_check.py`
+
+Explains the infidelity results below, branch by branch, at θ = 0.05 and 0.1. For each syndrome s, K_s is the operator the round applies to the code space (rotation, syndrome projection and minimum-weight correction). The script reports, by syndrome class:
+
+- how close K_s is to a multiple of a unitary;
+- whether the branch at −θ is the complex conjugate of the branch at +θ;
+- the logical rotation angle (the spread of the eigenphases of the nearest unitary); and
+- the branch's share of one-round entanglement infidelity, from the exact decomposition 1 − F = Σ_s (p_s − |tr K_s|²/16).
+
+In the reference run every branch is a coherent logical rotation (singular values equal to within 10⁻⁸ for the trivial syndrome and 10⁻⁴ for single-error syndromes at θ = 0.05). The branch at −θ is exactly the complex conjugate of the branch at +θ, and two classes of single-error syndromes, with total probability about 0.011 at θ = 0.05, rotate the logical state by θ and carry 95 per cent of the one-round infidelity (82 per cent at θ = 0.1).
+
+*Branch undo*, the inverse of each branch's nearest unitary, applied with the sign known, removes 99.4 and 98.0 per cent of one-round infidelity at the two angles. At the wrong sign it is about four times worse than no repair. Branch undo is the correction Özgüler (2026) constructs by polar decomposition, his 'inverse-polar table'. As a cross-check the script reproduces his three 300-round infidelities at |θ| = 0.1 (0.1323553 with no correction, 0.0007456 with the correctly signed table, 0.4140468 at the wrong sign) to seven decimal places. The script also reports the diamond-norm defect of branch undo for one round at θ = 0.05 to 0.3 and for two rounds at θ = 0.05 and 0.1:
+
+| θ | One round | Two rounds |
+|---|---|---|
+| 0.05 | 8.45 × 10⁻⁸ | 1.69 × 10⁻⁷ |
+| 0.1 | 4.97 × 10⁻⁶ | 9.95 × 10⁻⁶ |
+
+These are tighter than the solver's sign-known, history-used upper bounds in `prop52_numerical_check.py` (9.9 × 10⁻⁷ and 7.2 × 10⁻⁶) and `two_round_repair_check.py` (4.0 × 10⁻⁶ and 1.8 × 10⁻⁵). The conservative sign-blind to sign-known ratio is therefore about 4,400 at θ = 0.05 and 590 at θ = 0.1, the same over one and two rounds. For the rarest branches the eigenphase spread exceeds π, where it no longer measures the rotation angle reliably; the infidelity shares do not depend on it.
+
 ### `infidelity_and_calibration_check.py`
 
 `prop52_numerical_check.py` and `two_round_repair_check.py` measure repairs in diamond norm, a worst-case measure that weighs coherent errors heavily. This script asks three further questions of the same L = 3 toric instrument.
 
-1. **Infidelity.** The four optimal repairs are recomputed with entanglement infidelity (1 − entanglement fidelity) as the objective, at θ = 0.05, 0.1, 0.2 and 0.3, and bracketed: the upper end is the infidelity achieved by the solver's repairs made exact channels (or by no repair, if better), the lower end a dual bound made exactly feasible. In the reference run the sign-blind optimum, with the history used, is at least 13 to 32 times the known-sign one, against more than 370 times in diamond norm at θ = 0.05. With the history discarded, knowing the sign improves on no repair by at most 0.3 to 5.5 per cent.
-2. **Accumulation.** Infidelity after N = 1 to 300 rounds, with a repair applied every round from that round's syndrome alone, so that the N-round channel is the N-th power of the repaired one-round channel. Policies: no repair; a unitary fitted at the right and at the wrong sign; the diamond-optimal history-used repair with the sign known; the diamond-optimal history-used repair for both signs; and, for reference, a logical Pauli twirl of the unrepaired channel, an idealisation of randomised compiling. Unrepaired infidelity grows faster than linearly (12 to 17 times from 10 to 100 rounds), the twirled channel's linearly. The best sign-blind policy computed is the twirl, and the known-sign history-used repair beats it by a factor of 15 at θ = 0.05 and 35 at θ = 0.1, the same at every N. A fitted unitary at the right sign does no better than the twirl. At θ = 0.1 the unrepaired infidelity after 300 rounds is 0.132, consistent with the figure of about 0.13 in Özgüler's example. The diamond-optimal sign-blind repair is a poor controller by infidelity, because the diamond optimum is nearly degenerate; the script says so in its output.
-3. **Calibration error.** Repairs fitted at θ(1 + η) are applied to the channel at θ, for η = 0, ±0.001, ±0.01 and 0.1. With a 1 per cent error the known-sign history-used repair is essentially unaffected (still more than 370 times better than no repair, in diamond norm); with a 10 per cent error the advantage falls to 62-fold at θ = 0.05 and 26-fold at θ = 0.1.
-
-The optimal known-sign defect at θ = 0.1 is slightly *above* the defect of the repair fitted with a 1 per cent error; this reflects the solver's precision at defects of order 10⁻⁶, which the brackets in `prop52_numerical_check.py` also show.
+1. **Infidelity.** The four optimal repairs are recomputed with entanglement infidelity (1 − entanglement fidelity) as the objective, at θ = 0.05, 0.1, 0.2 and 0.3, and bracketed. The upper end is the best of the solver's repairs made exact channels, branch undo, and no repair; the lower end is a dual bound made exactly feasible. In the reference run the sign-blind optimum, with the history used, is at least 171, 51, 19 and 13 times the known-sign one at the four angles. At θ = 0.1, branch undo meets the dual bound to within 0.1 per cent. With the history discarded, knowing the sign improves on no repair by at most 0.3 to 5.5 per cent.
+2. **Accumulation.** Infidelity after N = 1 to 300 rounds, with a repair applied every round from that round's syndrome alone, so that the N-round channel is the N-th power of the repaired one-round channel. Policies: no repair; a unitary fitted at the right and at the wrong sign; the diamond-optimal history-used repair with the sign known; branch undo with the sign known; the diamond-optimal history-used repair for both signs; and, for reference, a logical Pauli twirl of the unrepaired channel, an idealisation of randomised compiling. Unrepaired infidelity grows faster than linearly (12 to 17 times from 10 to 100 rounds), the twirled channel's linearly. The best sign-blind policy computed is the twirl; the best known-sign policy, branch undo, beats it by a factor of 172 at θ = 0.05 and 51 at θ = 0.1, the same at every N. At θ = 0.1 the unrepaired infidelity after 300 rounds is 0.132; the diamond-optimal sign-blind repair is a poor controller by infidelity, because the diamond optimum is nearly degenerate.
+3. **Calibration error.** Repairs fitted at θ(1 + η) are applied to the channel at θ, for η = 0, ±0.001, ±0.01 and 0.1. One-round diamond defects are reported for the fitted unitary, the diamond-optimal history-used repair and branch undo, and the infidelity after 1, 100 and 300 rounds for the last two. A 1 per cent error changes almost nothing. A 10 per cent error raises the one-round diamond defect of branch undo 60-fold at θ = 0.05, but after 300 rounds raises its infidelity only by a factor of 2.7 (θ = 0.05) and 1.5 (θ = 0.1), and it remains more than 60 and 30 times better than the twirl.
 
 ### `blind_by_design_toy_repetition_code.py`
 
@@ -144,7 +163,7 @@ The analytical and interpretive claims depend on the definitions, assumptions an
 
 - Python 3.9 or later for `prop52_numerical_check.py`; Python 3.8 or later for the other NumPy scripts; for `audit_checks.py`, a Python version supported by current Stim releases
 - NumPy 1.20 or later for `prop52_numerical_check.py`; NumPy 1.17 or later for the other NumPy scripts
-- CVXPY 1.4 or later, with the Clarabel solver installed by default (`prop52_numerical_check.py`, `two_round_repair_check.py` and `infidelity_and_calibration_check.py` only)
+- CVXPY 1.4 or later, with the Clarabel solver installed by default (`prop52_numerical_check.py`, `two_round_repair_check.py`, `branch_mechanism_check.py` and `infidelity_and_calibration_check.py` only)
 - Stim and PyMatching (`audit_checks.py` only)
 
 ```bash
@@ -167,14 +186,15 @@ python audit_checks.py --pipeline --lemma-checks
 python blind_by_design_continuous_misspecification.py
 python blind_by_design_continuous_misspecification.py --kappa 1
 python two_round_repair_check.py
+python branch_mechanism_check.py
 python infidelity_and_calibration_check.py
 ```
 
-`prop52_numerical_check.py` imports `ozguler_prop1_check.py`, and `two_round_repair_check.py` and `infidelity_and_calibration_check.py` import both, so run them from the repository folder. The last command reproduces the parameter-sensitivity figures quoted in §6.4.2. Run times on a laptop are seconds for the repetition-code and continuous scripts, under a minute for the toric-code check and for the audit without `--lemma-checks`, about one to two minutes for the audit with `--lemma-checks`, about 20 to 30 minutes for `prop52_numerical_check.py`, most of it in section 4, the optimal repairs, about 10 to 15 minutes for `two_round_repair_check.py` at its two default angles, and about 7 minutes for `infidelity_and_calibration_check.py`. `audit_checks.py` also has a `--mirror` mode, a mode for saved `.stim` circuits, and a self-contained demonstration when run without arguments; the demonstration uses a different circuit and does not reproduce the paper's figures. Use `--help` on either of the two scripts with options.
+`prop52_numerical_check.py` imports `ozguler_prop1_check.py`, and the three companion scripts import both (`branch_mechanism_check.py` also imports `two_round_repair_check.py`), so run them from the repository folder. The last command reproduces the parameter-sensitivity figures quoted in §6.4.2. Run times on a laptop are seconds for the repetition-code and continuous scripts, under a minute for the toric-code check and for the audit without `--lemma-checks`, about one to two minutes for the audit with `--lemma-checks`, about 20 to 30 minutes for `prop52_numerical_check.py`, most of it in section 4, the optimal repairs, about 10 to 15 minutes for `two_round_repair_check.py` at its two default angles, about a minute for `branch_mechanism_check.py`, and about 7 to 8 minutes for `infidelity_and_calibration_check.py`. `audit_checks.py` also has a `--mirror` mode, a mode for saved `.stim` circuits, and a self-contained demonstration when run without arguments; the demonstration uses a different circuit and does not reproduce the paper's figures. Use `--help` on either of the two scripts with options.
 
 ## Reference output
 
-The `output/` folder holds the complete, unedited console output of each reference run. The first six were produced by version **0.6.1** of the scripts, the seventh by version **0.7.0** of `two_round_repair_check.py`, and the last by version **0.8.0** of `infidelity_and_calibration_check.py`, all with Python 3.12.3, NumPy 2.4.4, Stim 1.16.0, PyMatching 2.4.0, CVXPY 1.9.3 and Clarabel 0.11.1:
+The `output/` folder holds the complete, unedited console output of each reference run. The first six were produced by version **0.6.1** of the scripts, the seventh by version **0.7.0** of `two_round_repair_check.py`, and the last two by version **0.9.0** of `branch_mechanism_check.py` and `infidelity_and_calibration_check.py`, all with Python 3.12.3, NumPy 2.4.4, Stim 1.16.0, PyMatching 2.4.0, CVXPY 1.9.3 and Clarabel 0.11.1:
 
 | File | Command |
 |---|---|
@@ -185,6 +205,7 @@ The `output/` folder holds the complete, unedited console output of each referen
 | `continuous_misspecification_output.txt` | `python blind_by_design_continuous_misspecification.py` |
 | `continuous_misspecification_kappa1_output.txt` | `python blind_by_design_continuous_misspecification.py --kappa 1` |
 | `two_round_repair_check_output.txt` | `python two_round_repair_check.py` |
+| `branch_mechanism_check_output.txt` | `python branch_mechanism_check.py` |
 | `infidelity_and_calibration_check_output.txt` | `python infidelity_and_calibration_check.py` |
 
 The five outputs of the other scripts were regenerated in the same environment and are identical to the 0.1.0 reference files except for the version line. The elapsed-time line printed by the continuous script is omitted from its reference files, since it varies between runs. To compare a new run with a reference file:
@@ -219,6 +240,7 @@ blind-by-design-qec/
 ├── audit_checks.py
 ├── blind_by_design_continuous_misspecification.py
 ├── two_round_repair_check.py
+├── branch_mechanism_check.py
 ├── infidelity_and_calibration_check.py
 ├── docs/
 │   └── reliance_note_ozguler2026.md
@@ -230,6 +252,7 @@ blind-by-design-qec/
 │   ├── continuous_misspecification_output.txt
 │   ├── continuous_misspecification_kappa1_output.txt
 │   ├── two_round_repair_check_output.txt
+│   ├── branch_mechanism_check_output.txt
 │   └── infidelity_and_calibration_check_output.txt
 └── assets/
     └── blind-by-design-qec-3.jpg
@@ -237,7 +260,7 @@ blind-by-design-qec/
 
 ## Version correspondence
 
-The figures reported in Version 1.0 of the paper, including the numerical checks of §5.3.1, correspond to version **0.6.1** of this software. Version **0.7.0** adds `two_round_repair_check.py`, and version **0.8.0** adds `infidelity_and_calibration_check.py`, whose figures are reported in the technical companion; it leaves the five earlier scripts and their reference outputs unchanged, so it reproduces every figure of the paper as well. Versions 0.1.0 to 0.6.0 accompanied earlier drafts; the results of the other four scripts are unchanged throughout. Use the archived release of the matching version when reproducing or citing figures. See `CHANGELOG.md` for the history of changes.
+The figures reported in Version 1.0 of the paper, including the numerical checks of §5.3.1, correspond to version **0.6.1** of this software. Version **0.7.0** adds `two_round_repair_check.py`, version **0.8.0** adds `infidelity_and_calibration_check.py`, and version **0.9.0** adds `branch_mechanism_check.py` and extends `infidelity_and_calibration_check.py`; their figures are reported in the technical companion; it leaves the five earlier scripts and their reference outputs unchanged, so it reproduces every figure of the paper as well. Versions 0.1.0 to 0.6.0 accompanied earlier drafts; the results of the other four scripts are unchanged throughout. Use the archived release of the matching version when reproducing or citing figures. See `CHANGELOG.md` for the history of changes.
 
 ## Citation
 
@@ -245,7 +268,7 @@ If you use the theoretical argument, please cite the paper:
 
 > Kahl, P. (2026) *Blind by Design: Quantum Error Correction, Functional Incompatibility and the Value of Evidence*. Lex et Ratio Working Paper LXR-2026-PHI-BBDQEC-WP, Version 1.0. doi:10.5281/zenodo.23278643.
 
-For the two-round, infidelity, accumulation and calibration results, please cite the technical companion:
+For the two-round, mechanism, infidelity, accumulation and calibration results, please cite the technical companion:
 
 > Kahl, P. (2026) *Sign-Blind Recovery, Record Leakage and Model Misspecification in Quantum Error Correction: Worked Numerical Cases*. In preparation.
 

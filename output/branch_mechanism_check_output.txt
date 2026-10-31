@@ -1,0 +1,63 @@
+=== Run configuration ===
+script version = 0.9.0
+Python version = 3.12.3
+NumPy version = 2.4.4
+thetas = (0.05, 0.1)
+infidelity = 1 - entanglement fidelity; decomposition sum_s (p_s - |tr K_s|^2 / 16) is exact
+
+=== theta = 0.05 ===
+ 20 syndrome classes; the 6 most probable:
+ class prob.   syndromes  rotation angle   singular-value spread   share of infidelity
+ 9.888e-01        1      1.869e-04        2.1e-08                   0.1 per cent
+ 5.554e-03        9      5.003e-02        7.8e-06                  47.4 per cent
+ 5.554e-03        9      5.003e-02        7.8e-06                  47.4 per cent
+ 2.784e-05       18      1.498e-01        9.3e-04                   1.1 per cent
+ 1.388e-05        9      9.962e-02        1.3e-03                   0.2 per cent
+ 6.976e-06       18      1.997e-01        6.2e-03                   1.0 per cent
+ most probable class: probability 0.9888, rotation angle 1.87e-04 (theta^3 = 1.25e-04), share of infidelity 0.1 per cent
+ next classes: rotation angles 0.0500 to 0.1997 (theta = 0.05)
+ largest |K(-theta) - conj K(+theta)| over all syndromes: 0.0e+00
+ One-round entanglement infidelity:
+  no repair                                         7.2644e-06
+  each branch's rotation undone, sign known         4.2210e-08   (99.4 per cent removed)
+  the same repairs applied at the wrong sign        2.8898e-05   (4.0 times no repair)
+
+=== theta = 0.10 ===
+ 20 syndrome classes; the 6 most probable:
+ class prob.   syndromes  rotation angle   singular-value spread   share of infidelity
+ 9.561e-01        1      1.481e-03        1.3e-06                   0.2 per cent
+ 2.139e-02        9      1.003e-01        1.3e-04                  40.9 per cent
+ 2.139e-02        9      1.003e-01        1.3e-04                  40.9 per cent
+ 4.322e-04       18      2.982e-01        3.7e-03                   3.8 per cent
+ 2.137e-04        9      1.970e-01        5.1e-03                   0.8 per cent
+ 1.090e-04       18      3.980e-01        2.4e-02                   3.4 per cent
+ most probable class: probability 0.9561, rotation angle 1.48e-03 (theta^3 = 1.00e-03), share of infidelity 0.2 per cent
+ next classes: rotation angles 0.1003 to 0.3980 (theta = 0.1)
+ largest |K(-theta) - conj K(+theta)| over all syndromes: 0.0e+00
+ One-round entanglement infidelity:
+  no repair                                         1.2692e-04
+  each branch's rotation undone, sign known         2.4872e-06   (98.0 per cent removed)
+  the same repairs applied at the wrong sign        4.9611e-04   (3.9 times no repair)
+
+=== Cross-check: Özgüler (2026, §II), |theta| = 0.10, 300 rounds ===
+ no correction             0.1323553   (Özgüler: 0.1323553)
+ correctly signed table    0.0007456   (Özgüler: 0.0007456)
+ table at the wrong sign   0.4140468   (Özgüler: 0.4140468)
+
+=== Diamond-norm defect of branch undo, sign known ===
+ [entangled-input lower bound, upper bound]
+ theta  one round                    two rounds (one repair after both)
+ 0.05   [8.442e-08, 8.452e-08]     [1.688e-07, 1.690e-07]   (201 classes)
+ 0.10   [4.974e-06, 4.975e-06]     [9.949e-06, 9.949e-06]   (206 classes)
+ 0.20   [2.639e-04, 2.639e-04]
+ 0.30   [2.436e-03, 2.436e-03]
+
+=== Summary ===
+PASS  theta = 0.05: branch at -theta is the complex conjugate of the branch at +theta
+PASS  theta = 0.05: undoing each branch with the sign known removes more than 90 per cent of one-round infidelity
+PASS  theta = 0.05: the same repairs at the wrong sign are worse than no repair
+PASS  theta = 0.10: branch at -theta is the complex conjugate of the branch at +theta
+PASS  theta = 0.10: undoing each branch with the sign known removes more than 90 per cent of one-round infidelity
+PASS  theta = 0.10: the same repairs at the wrong sign are worse than no repair
+PASS  cross-check: Özgüler's three 300-round infidelities reproduced to seven decimal places
+PASS  branch undo: diamond bounds ordered (lower <= upper)

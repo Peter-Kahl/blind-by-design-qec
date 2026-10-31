@@ -2,6 +2,28 @@
 
 All notable changes to this repository are recorded here.
 
+## 0.9.0 — 2026-10-31
+
+Explains the infidelity results branch by branch, and tightens several sign-known figures. Earlier scripts other than `infidelity_and_calibration_check.py` are unchanged and keep their versions.
+
+### `branch_mechanism_check.py` (new)
+
+- For each syndrome of the L = 3 toric instrument at θ = 0.05 and 0.1: closeness of the branch to a multiple of a unitary, conjugation symmetry between the signs, logical rotation angle, and exact share of one-round entanglement infidelity (1 − F = Σ_s (p_s − |tr K_s|²/16)).
+- Cross-check against Özgüler (2026, §II): branch undo is his correctly signed 'inverse-polar table', and the script reproduces his three 300-round infidelities at |θ| = 0.1 to seven decimal places, with a summary check.
+- Branch undo (the inverse of each branch's nearest unitary, sign known) compared with no repair and with the same repairs at the wrong sign, by one-round infidelity; and its diamond-norm defect for one round (θ = 0.05 to 0.3) and two rounds (θ = 0.05 and 0.1).
+- Reference-run findings: every branch is a coherent logical rotation, and the branch at −θ is exactly the complex conjugate of the branch at +θ; two classes of single-error syndromes rotate by θ and carry 95 per cent (θ = 0.05) and 82 per cent (θ = 0.1) of one-round infidelity; branch undo removes 99.4 and 98.0 per cent. In diamond norm, branch undo gives 8.45 × 10⁻⁸ (θ = 0.05) and 4.97 × 10⁻⁶ (θ = 0.1) for one round, and 1.69 × 10⁻⁷ and 9.95 × 10⁻⁶ for two, tighter than the solver's sign-known upper bounds in `prop52_numerical_check.py` and `two_round_repair_check.py`, which are unchanged.
+
+### `infidelity_and_calibration_check.py` (0.8.0 → 0.9.0)
+
+- Branch undo added to all three parts: as an upper end of the sign-known, history-used infidelity bracket; as a policy in the accumulation tables; and in the calibration tables.
+- Calibration section extended: infidelity after 1, 100 and 300 rounds for repairs fitted at θ(1 + η), with the twirled channel for comparison.
+- Reference-run findings revised: sign-blind to sign-known infidelity ratios at least 171, 51, 19 and 13 at θ = 0.05, 0.1, 0.2 and 0.3 (previously 17, 32, 19 and 13 with the solver's repairs alone); against the twirl, the best known-sign policy is 172 times better at θ = 0.05 and 51 times at θ = 0.1, at every N.
+- During development, a new summary check written before the run required a 10 per cent calibration error to change the 300-round infidelity of branch undo by less than a factor of 2. It changed it by a factor of 2.72 at θ = 0.05 (1.27 × 10⁻⁵ to 3.45 × 10⁻⁵) and 1.51 at θ = 0.1. The check was restated as the property the companion relies on: that branch undo stays more than 10 times below the twirl at every η; the factor is printed in the output.
+
+### Repository
+
+- `README.md`, `CITATION.cff`, `.zenodo.json` and `requirements.txt` updated; new reference output `output/branch_mechanism_check_output.txt`; `output/infidelity_and_calibration_check_output.txt` regenerated.
+
 ## 0.8.0 — 2026-10-31
 
 Adds an infidelity, accumulation and calibration-error analysis of the repair comparison, for the technical companion. All earlier scripts and their reference outputs are unchanged and keep their versions (0.6.1 and 0.7.0).
