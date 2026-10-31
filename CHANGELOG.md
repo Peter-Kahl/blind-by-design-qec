@@ -2,6 +2,22 @@
 
 All notable changes to this repository are recorded here.
 
+## 0.7.0 — 2026-10-31
+
+Adds a two-round extension of the repair comparison, for the technical companion 'Sign-Blind Recovery, Record Leakage and Model Misspecification in Quantum Error Correction: Worked Numerical Cases'. The five existing scripts and their reference outputs are unchanged and keep version 0.6.1, so every figure in Version 1.0 of the paper is reproduced by this release as by 0.6.1.
+
+### `two_round_repair_check.py` (new)
+
+- Repeats section 4 of `prop52_numerical_check.py` over two rounds of the L = 3 toric instrument, at θ = 0.05 and 0.1, with one repair after both rounds, chosen with the two-round syndrome history discarded or used. Repairs between rounds are not considered.
+- Two-round histories are formed from ordered pairs of the 20 one-round syndrome classes and regrouped (201 classes at θ = 0.05, 206 at θ = 0.1). Each class is represented by one Kraus operator per sign whose map equals the class's summed map; the residual is reported and checked.
+- For the sign-blind, history-used repair, classes with probability below 10⁻⁸ share one repair, since the solver fails numerically on the unpooled problem. The achieved defect of the pooled policy is a valid upper bound; the lower bound is made feasible class by class from the same dual point, so it does not depend on the pooling.
+- Reference-run findings: at θ = 0.1, using the two-round history lowers the sign-blind defect by about 5 per cent (about 6 per cent in one round), and the sign-blind optimum is more than 330 times the known-sign one, with brackets overlapping the one-round ratio. At θ = 0.05 the known-sign, history-used bracket is too wide to be informative and only its upper end is used.
+- Summary checks per angle: class maps and completeness exact to rounding; sign-blind repair more than twice the known-sign optimum; using the history helps the sign-blind repair less than the known-sign one; no repair within 3 per cent of the best sign-blind repair with the history discarded.
+
+### Repository
+
+- `README.md`, `CITATION.cff`, `.zenodo.json` and `requirements.txt` updated; new reference output `output/two_round_repair_check_output.txt`. The repository-structure listing in `README.md` now names the image file actually present (`blind-by-design-qec-3.jpg`).
+
 ## 0.6.1 — 2026-10-08
 
 Removes the dependence of the history-used lower bounds on the grouping of syndromes into classes. Results of the other four scripts are unchanged.

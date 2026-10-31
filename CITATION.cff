@@ -7,15 +7,17 @@ authors:
     given-names: "Peter"
     affiliation: "Independent researcher, Lex et Ratio"
     orcid: "https://orcid.org/0009-0003-1616-4843"
-version: "0.6.1"
-date-released: "2026-10-08"
+version: "0.7.0"
+date-released: "2026-10-31"
 repository-code: "https://github.com/Peter-Kahl/blind-by-design-qec"
 url: "https://www.lexetratio.com"
 license: MIT
 abstract: >-
   Computational supplement to 'Blind by Design: Quantum Error Correction,
   Functional Incompatibility and the Value of Evidence' (Lex et Ratio Working
-  Paper LXR-2026-PHI-BBDQEC-WP). Five scripts: a numerical check of
+  Paper LXR-2026-PHI-BBDQEC-WP) and to its technical companion, 'Sign-Blind
+  Recovery, Record Leakage and Model Misspecification in Quantum Error
+  Correction: Worked Numerical Cases'. Six scripts: a numerical check of
   Proposition 5.2, which bounds what the classical record of an approximately
   function-preserving inquiry can reveal about an encoded quantum state; a
   three-qubit repetition-code
@@ -24,7 +26,9 @@ abstract: >-
   2026, Proposition 1); a construction audit of Stim/PyMatching surface-code
   simulations; and a continuous error-correction simulation in which a
   misspecified detector efficiency is detected and repaired from the records
-  already held. Includes reference outputs and a reliance note.
+  already held; and a two-round extension of the comparison between repairs
+  that know the sign of a coherent rotation and repairs that must serve both
+  signs. Includes reference outputs and a reliance note.
 keywords:
   - "quantum error correction"
   - "functional incompatibility"
@@ -49,6 +53,7 @@ references:
     collection-title: "Lex et Ratio Working Papers"
     number: "LXR-2026-PHI-BBDQEC-WP"
     version: "1.0"
+    doi: "10.5281/zenodo.23278643"
   - type: article
     title: "Securing quantum error correction against misleading advice from AI agents"
     authors:

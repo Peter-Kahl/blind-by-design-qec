@@ -9,7 +9,11 @@
 
 Computational supplement to:
 
-**Peter Kahl, ‘Blind by Design: Quantum Error Correction, Functional Incompatibility and the Value of Evidence’ (2026). Lex et Ratio Working Paper LXR-2026-PHI-BBDQEC-WP, Version 1.0. DOI to be assigned.**
+**Peter Kahl, ‘Blind by Design: Quantum Error Correction, Functional Incompatibility and the Value of Evidence’ (2026). Lex et Ratio Working Paper LXR-2026-PHI-BBDQEC-WP, Version 1.0. doi:10.5281/zenodo.23278643.**
+
+and to its technical companion:
+
+**Peter Kahl, ‘Sign-Blind Recovery, Record Leakage and Model Misspecification in Quantum Error Correction: Worked Numerical Cases’ (2026). In preparation.**
 
 The paper asks when evidence a system lacks marks a defect in how it inquires, and when it is required by what the system must do. Quantum error correction (QEC) is its test case: syndrome measurements are built to reveal errors while revealing nothing about the encoded information. The paper separates three kinds of blindness:
 
@@ -19,7 +23,7 @@ The paper asks when evidence a system lacks marks a defect in how it inquires, a
 
 Two propositions carry the function-relative case. Proposition 5.1 shows that an inquiry which performs its required operation exactly produces a classical record that is the same for every encoded state. Proposition 5.2 extends this to inquiries that perform the operation only approximately: if the inquiry falls short of its function by ε in diamond norm, after the best possible repair, its complete record distinguishes encoded states with total-variation distance at most 2√ε, and the shortfalls add over rounds.
 
-This repository contains the five scripts behind the paper's computations, the complete output of each reference run, and the reliance note on the preprint result the paper uses.
+This repository contains the five scripts behind the paper's computations, a sixth script extending one of them for the technical companion, the complete output of each reference run, and the reliance note on the preprint result the paper uses.
 
 ## Contents and correspondence with the paper
 
@@ -30,6 +34,7 @@ This repository contains the five scripts behind the paper's computations, the c
 | `ozguler_prop1_check.py` | §6.1; reliance note | Independent numerical check of the toric-code sign-symmetry result used in §6.1 |
 | `audit_checks.py` | §6.4.1; Appendix A | Construction audit of the surface-code simulations |
 | `blind_by_design_continuous_misspecification.py` | §6.4.2 | Model-relative blindness, detected and repaired from the records already held |
+| `two_round_repair_check.py` | Companion note, §3 (extends §5.3.1, Table 7) | Pointwise versus uniform repair over two rounds of the toric instrument, with the two-round syndrome history discarded or used |
 
 ## The scripts
 
@@ -55,6 +60,14 @@ Two contrasts follow. In the three-qubit repetition code, every three-round hist
 In the reference run the bound holds at every angle and round count. It is loose by a factor of about 20,000 at θ = 0.05 and about 7 at θ = 0.5. At small angles the leak grows as θ⁶ (that is, θ^2L), ε_id as θ³ (the coherent logical rotation) and ε_dec as θ⁴ (what remains once the fitted decoder removes that rotation).
 
 Two safeguards keep the verdicts from depending on solver tolerance. Every reported diamond distance is an upper bound, because the SDP's dual solution is shifted until it satisfies the dual constraints, as judged by a floating-point eigenvalue computation, before the objective is evaluated. Every check of the inequality is made at a lower bound that does not come from the solver at all: the trace distance produced by one explicit input, the maximally entangled state. Both are numerically constructed estimates in double-precision floating point. The margins by which the checks pass far exceed the solver residuals, but the bounds have not been certified by interval arithmetic or validated eigenvalue bounds; the computations illustrate the proposition and test the implementation, and the proposition itself rests on its proof. One limit should be stated plainly: Proposition 5.2 is stated with the best repair over all channels, which the script cannot compute. It uses one fitted unitary repair, which can only overstate the defect, so its checks test a necessary consequence of the proposition. A violation would refute it; passing does not confirm the bound at its strongest. The SDP is validated against the closed form 2 sin(φ/2) for a single-qubit phase rotation. The leak is computed exactly from the parity form of the history effects, F_h = q_h I + g_h P with P the product of the two logical X operators; the script reports the largest deviation from that form, which is at rounding level throughout.
+
+### `two_round_repair_check.py`
+
+Section 4 of `prop52_numerical_check.py` computes the cost of not knowing the rotation's sign for one round only. The complete syndrome history has the same law at +θ and −θ (Özgüler 2026, Proposition 1), so a longer history cannot reveal the sign; but it might still help a repair that must serve both signs. This script repeats the comparison over two rounds of the same L = 3 toric instrument, at θ = 0.05 and 0.1, with one repair applied after both rounds. Repairs applied between rounds are not considered.
+
+The 256² two-round histories are formed from ordered pairs of the 20 one-round syndrome classes and regrouped into classes whose branch maps agree up to weight: 201 classes at θ = 0.05 and 206 at θ = 0.1. Each class is represented by one Kraus operator per sign, scaled so that its map equals the class's summed map; the script reports the largest deviation, which is at rounding level. The four optima are bracketed as in `prop52_numerical_check.py`. For the sign-blind, history-used repair, classes with probability below 10⁻⁸ share one repair, since without this pooling the solver fails numerically (class probabilities span about 1 to 10⁻¹⁶). The pooled policy is a valid policy, so its achieved defect is a valid upper bound; the lower bound is computed for every class individually from the same dual point, so it does not depend on the pooling.
+
+In the reference run at θ = 0.1, using the two-round history lowers the sign-blind defect by about 5 per cent (from 6.15 × 10⁻³ with no repair to at least 5.84 × 10⁻³), against about 6 per cent in one round. The best known-sign repair reaches 1.8 × 10⁻⁵ or better, so the sign-blind optimum is more than 330 times larger; the one-round ratio at the same angle lies between about 400 and 630, the two-round ratio between about 330 and 600, and the brackets overlap. Every defect roughly doubles from one round to two. At θ = 0.05 the known-sign, history-used bracket is too wide to be informative (lower end about 40 times below the upper end), because the defects are of order 10⁻⁶ and the solver reports its solutions as 'optimal_inaccurate'; only its upper end is used.
 
 ### `blind_by_design_toy_repetition_code.py`
 
@@ -101,6 +114,7 @@ No new measurement is needed: the blindness is model-relative. With no feedback 
 - Proposition 5.2 rests on its proof, not on `prop52_numerical_check.py`. The script checks the inequality on two instruments, at seven angles and up to three rounds; it does not test adaptive inquiries, other codes or other noise.
 - The fitted decoder in `prop52_numerical_check.py` is one unitary repair, not the best possible repair over all channels. Its checks test a consequence of Proposition 5.2, not the bound at its strongest.
 - The complement distances in `prop52_numerical_check.py` come from a local search and are lower bounds on the true maxima.
+- `two_round_repair_check.py` considers one repair after two rounds. A controller that repairs between rounds, or that uses longer histories, has a larger class of policies, which has not been computed.
 - How loose the bound is on these instruments says nothing about how loose it is in general.
 - Small state-vector calculations say nothing about asymptotic behaviour.
 - Numerical equality holds only to floating-point precision.
@@ -116,7 +130,7 @@ The analytical and interpretive claims depend on the definitions, assumptions an
 
 - Python 3.9 or later for `prop52_numerical_check.py`; Python 3.8 or later for the other NumPy scripts; for `audit_checks.py`, a Python version supported by current Stim releases
 - NumPy 1.20 or later for `prop52_numerical_check.py`; NumPy 1.17 or later for the other NumPy scripts
-- CVXPY 1.4 or later, with the Clarabel solver installed by default (`prop52_numerical_check.py` only)
+- CVXPY 1.4 or later, with the Clarabel solver installed by default (`prop52_numerical_check.py` and `two_round_repair_check.py` only)
 - Stim and PyMatching (`audit_checks.py` only)
 
 ```bash
@@ -138,13 +152,14 @@ python ozguler_prop1_check.py
 python audit_checks.py --pipeline --lemma-checks
 python blind_by_design_continuous_misspecification.py
 python blind_by_design_continuous_misspecification.py --kappa 1
+python two_round_repair_check.py
 ```
 
-`prop52_numerical_check.py` imports `ozguler_prop1_check.py`, so run it from the repository folder. The last command reproduces the parameter-sensitivity figures quoted in §6.4.2. Run times on a laptop are seconds for the repetition-code and continuous scripts, under a minute for the toric-code check and for the audit without `--lemma-checks`, about one to two minutes for the audit with `--lemma-checks`, and about 20 to 30 minutes for `prop52_numerical_check.py`, most of it in section 4, the optimal repairs. `audit_checks.py` also has a `--mirror` mode, a mode for saved `.stim` circuits, and a self-contained demonstration when run without arguments; the demonstration uses a different circuit and does not reproduce the paper's figures. Use `--help` on either of the two scripts with options.
+`prop52_numerical_check.py` imports `ozguler_prop1_check.py`, and `two_round_repair_check.py` imports both, so run them from the repository folder. The last command reproduces the parameter-sensitivity figures quoted in §6.4.2. Run times on a laptop are seconds for the repetition-code and continuous scripts, under a minute for the toric-code check and for the audit without `--lemma-checks`, about one to two minutes for the audit with `--lemma-checks`, about 20 to 30 minutes for `prop52_numerical_check.py`, most of it in section 4, the optimal repairs, and about 10 to 15 minutes for `two_round_repair_check.py` at its two default angles. `audit_checks.py` also has a `--mirror` mode, a mode for saved `.stim` circuits, and a self-contained demonstration when run without arguments; the demonstration uses a different circuit and does not reproduce the paper's figures. Use `--help` on either of the two scripts with options.
 
 ## Reference output
 
-The `output/` folder holds the complete, unedited console output of each reference run, produced by version **0.6.1** of the scripts with Python 3.12.3, NumPy 2.4.4, Stim 1.16.0, PyMatching 2.4.0, CVXPY 1.9.3 and Clarabel 0.11.1:
+The `output/` folder holds the complete, unedited console output of each reference run. The first six were produced by version **0.6.1** of the scripts, and the last by version **0.7.0** of `two_round_repair_check.py`, all with Python 3.12.3, NumPy 2.4.4, Stim 1.16.0, PyMatching 2.4.0, CVXPY 1.9.3 and Clarabel 0.11.1:
 
 | File | Command |
 |---|---|
@@ -154,6 +169,7 @@ The `output/` folder holds the complete, unedited console output of each referen
 | `audit_checks_pipeline_output.txt` | `python audit_checks.py --pipeline --lemma-checks` |
 | `continuous_misspecification_output.txt` | `python blind_by_design_continuous_misspecification.py` |
 | `continuous_misspecification_kappa1_output.txt` | `python blind_by_design_continuous_misspecification.py --kappa 1` |
+| `two_round_repair_check_output.txt` | `python two_round_repair_check.py` |
 
 The five outputs of the other scripts were regenerated in the same environment and are identical to the 0.1.0 reference files except for the version line. The elapsed-time line printed by the continuous script is omitted from its reference files, since it varies between runs. To compare a new run with a reference file:
 
@@ -186,6 +202,7 @@ blind-by-design-qec/
 ├── ozguler_prop1_check.py
 ├── audit_checks.py
 ├── blind_by_design_continuous_misspecification.py
+├── two_round_repair_check.py
 ├── docs/
 │   └── reliance_note_ozguler2026.md
 ├── output/
@@ -194,20 +211,25 @@ blind-by-design-qec/
 │   ├── ozguler_prop1_check_output.txt
 │   ├── audit_checks_pipeline_output.txt
 │   ├── continuous_misspecification_output.txt
-│   └── continuous_misspecification_kappa1_output.txt
+│   ├── continuous_misspecification_kappa1_output.txt
+│   └── two_round_repair_check_output.txt
 └── assets/
-    └── blind-by-design-qec-2.jpg
+    └── blind-by-design-qec-3.jpg
 ```
 
 ## Version correspondence
 
-The figures reported in Version 1.0 of the paper, including the numerical checks of §5.3.1, correspond to version **0.6.1** of this software. Versions 0.1.0 to 0.6.0 accompanied earlier drafts; the results of the other four scripts are unchanged throughout. Use the archived release of the matching version when reproducing or citing figures. See `CHANGELOG.md` for the history of changes.
+The figures reported in Version 1.0 of the paper, including the numerical checks of §5.3.1, correspond to version **0.6.1** of this software. Version **0.7.0** adds `two_round_repair_check.py`, whose figures are reported in the technical companion; it leaves the five earlier scripts and their reference outputs unchanged, so it reproduces every figure of the paper as well. Versions 0.1.0 to 0.6.0 accompanied earlier drafts; the results of the other four scripts are unchanged throughout. Use the archived release of the matching version when reproducing or citing figures. See `CHANGELOG.md` for the history of changes.
 
 ## Citation
 
 If you use the theoretical argument, please cite the paper:
 
-> Kahl, P. (2026) *Blind by Design: Quantum Error Correction, Functional Incompatibility and the Value of Evidence*. Lex et Ratio Working Paper LXR-2026-PHI-BBDQEC-WP, Version 1.0.
+> Kahl, P. (2026) *Blind by Design: Quantum Error Correction, Functional Incompatibility and the Value of Evidence*. Lex et Ratio Working Paper LXR-2026-PHI-BBDQEC-WP, Version 1.0. doi:10.5281/zenodo.23278643.
+
+For the two-round results, please cite the technical companion:
+
+> Kahl, P. (2026) *Sign-Blind Recovery, Record Leakage and Model Misspecification in Quantum Error Correction: Worked Numerical Cases*. In preparation.
 
 If you use or modify the software, please also cite the archived software release. Citation metadata are in `CITATION.cff`. The paper and the software are separate scholarly objects with separate persistent identifiers.
 
