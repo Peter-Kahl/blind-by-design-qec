@@ -15,7 +15,7 @@ Computational supplement to:
 
 and to its technical companion:
 
-**Peter Kahl, ‘Sign-Blind Recovery, Record Leakage and Model Misspecification in Quantum Error Correction: Worked Numerical Cases’ (2026). In preparation.**
+**Peter Kahl, ‘The Cost of Sign-Blind Recovery under Coherent Noise: Worked Numerical Cases’ (2026). In preparation.**
 
 The paper asks when evidence a system lacks marks a defect in how it inquires, and when it is required by what the system must do. Quantum error correction (QEC) is its test case: syndrome measurements are built to reveal errors while revealing nothing about the encoded information. The paper separates three kinds of blindness:
 
@@ -37,8 +37,8 @@ This repository contains the five scripts behind the paper's computations, three
 | `audit_checks.py` | §6.4.1; Appendix A | Construction audit of the surface-code simulations |
 | `blind_by_design_continuous_misspecification.py` | §6.4.2 | Model-relative blindness, detected and repaired from the records already held |
 | `two_round_repair_check.py` | Companion note, §3 (extends §5.3.1, Table 7) | Pointwise versus uniform repair over two rounds of the toric instrument, with the two-round syndrome history discarded or used |
-| `branch_mechanism_check.py` | Companion note, §3 | Why the sign matters: each syndrome branch is a coherent logical rotation whose direction reverses with the sign; branch-undo repair in infidelity and diamond norm |
-| `infidelity_and_calibration_check.py` | Companion note, §3 | The same comparison by entanglement infidelity; infidelity accumulated over up to 300 rounds, against an idealised logical twirl; sensitivity of the known-sign repairs to calibration error, over one and many rounds |
+| `branch_mechanism_check.py` | Companion note, §4 (and §3 for branch undo in diamond norm) | Why the sign matters: each syndrome branch is a coherent logical rotation whose direction reverses with the sign; branch-undo repair in infidelity and diamond norm |
+| `infidelity_and_calibration_check.py` | Companion note, §4 | The same comparison by entanglement infidelity; infidelity accumulated over up to 300 rounds, against an idealised logical twirl; sensitivity of the known-sign repairs to calibration error, over one and many rounds |
 
 ## The scripts
 
@@ -260,7 +260,7 @@ blind-by-design-qec/
 
 ## Version correspondence
 
-The figures reported in Version 1.0 of the paper, including the numerical checks of §5.3.1, correspond to version **0.6.1** of this software. Version **0.7.0** adds `two_round_repair_check.py`, version **0.8.0** adds `infidelity_and_calibration_check.py`, and version **0.9.0** adds `branch_mechanism_check.py` and extends `infidelity_and_calibration_check.py`; their figures are reported in the technical companion; it leaves the five earlier scripts and their reference outputs unchanged, so it reproduces every figure of the paper as well. Versions 0.1.0 to 0.6.0 accompanied earlier drafts; the results of the other four scripts are unchanged throughout. Use the archived release of the matching version when reproducing or citing figures. See `CHANGELOG.md` for the history of changes.
+The figures reported in Version 1.0 of the paper, including the numerical checks of §5.3.1, correspond to version **0.6.1** of this software. Version **0.7.0** adds `two_round_repair_check.py`, version **0.8.0** adds `infidelity_and_calibration_check.py`, and version **0.9.0** adds `branch_mechanism_check.py` and extends `infidelity_and_calibration_check.py`; their figures are reported in the technical companion. Version **0.9.1** changes documentation and metadata only. None of these versions changes the five earlier scripts or their reference outputs, so each reproduces every figure of the paper as well. Versions 0.1.0 to 0.6.0 accompanied earlier drafts; the results of the other four scripts are unchanged throughout. Use the archived release of the matching version when reproducing or citing figures. See `CHANGELOG.md` for the history of changes.
 
 ## Citation
 
@@ -270,7 +270,7 @@ If you use the theoretical argument, please cite the paper:
 
 For the two-round, mechanism, infidelity, accumulation and calibration results, please cite the technical companion:
 
-> Kahl, P. (2026) *Sign-Blind Recovery, Record Leakage and Model Misspecification in Quantum Error Correction: Worked Numerical Cases*. In preparation.
+> Kahl, P. (2026) *The Cost of Sign-Blind Recovery under Coherent Noise: Worked Numerical Cases*. In preparation.
 
 If you use or modify the software, please also cite the archived software release. Citation metadata are in `CITATION.cff`. The paper and the software are separate scholarly objects with separate persistent identifiers.
 

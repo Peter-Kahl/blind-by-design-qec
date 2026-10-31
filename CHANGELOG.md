@@ -2,6 +2,13 @@
 
 All notable changes to this repository are recorded here.
 
+## 0.9.1 — 2026-10-31
+
+Documentation and metadata only. No computation, script version or reference output changes.
+
+- The technical companion is retitled 'The Cost of Sign-Blind Recovery under Coherent Noise: Worked Numerical Cases' (previously 'Sign-Blind Recovery, Record Leakage and Model Misspecification in Quantum Error Correction: Worked Numerical Cases'), and its sections are renumbered: the mechanism, infidelity, accumulation and calibration results are now in §4.
+- References to the companion updated in `README.md`, `CITATION.cff`, `.zenodo.json` and the docstrings of `two_round_repair_check.py`, `branch_mechanism_check.py` and `infidelity_and_calibration_check.py`. The scripts keep their versions (0.7.0, 0.9.0 and 0.9.0) because only their docstrings change. Earlier entries in this changelog keep the old title.
+
 ## 0.9.0 — 2026-10-31
 
 Explains the infidelity results branch by branch, and tightens several sign-known figures. Earlier scripts other than `infidelity_and_calibration_check.py` are unchanged and keep their versions.

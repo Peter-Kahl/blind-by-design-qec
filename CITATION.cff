@@ -7,7 +7,7 @@ authors:
     given-names: "Peter"
     affiliation: "Independent researcher, Lex et Ratio"
     orcid: "https://orcid.org/0009-0003-1616-4843"
-version: "0.9.0"
+version: "0.9.1"
 date-released: "2026-10-31"
 repository-code: "https://github.com/Peter-Kahl/blind-by-design-qec"
 url: "https://www.lexetratio.com"
@@ -15,9 +15,7 @@ license: MIT
 abstract: >-
   Computational supplement to 'Blind by Design: Quantum Error Correction,
   Functional Incompatibility and the Value of Evidence' (Lex et Ratio Working
-  Paper LXR-2026-PHI-BBDQEC-WP) and to its technical companion, 'Sign-Blind
-  Recovery, Record Leakage and Model Misspecification in Quantum Error
-  Correction: Worked Numerical Cases'. Eight scripts: a numerical check of
+  Paper LXR-2026-PHI-BBDQEC-WP) and to its technical companion, 'The Cost of Sign-Blind Recovery under Coherent Noise: Worked Numerical Cases'. Eight scripts: a numerical check of
   Proposition 5.2, which bounds what the classical record of an approximately
   function-preserving inquiry can reveal about an encoded quantum state; a
   three-qubit repetition-code

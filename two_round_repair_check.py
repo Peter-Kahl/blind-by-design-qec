@@ -9,8 +9,7 @@ Version:
 
 Supplementary research code for:
 
-    Peter Kahl, 'Sign-Blind Recovery, Record Leakage and Model
-    Misspecification in Quantum Error Correction: Worked Numerical Cases'
+    Peter Kahl, 'The Cost of Sign-Blind Recovery under Coherent Noise: Worked Numerical Cases'
     (2026), §3 (two rounds); and
 
     Peter Kahl, 'Blind by Design: Quantum Error Correction, Functional

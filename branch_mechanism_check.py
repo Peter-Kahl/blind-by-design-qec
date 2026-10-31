@@ -9,9 +9,8 @@ Version:
 
 Supplementary research code for:
 
-    Peter Kahl, 'Sign-Blind Recovery, Record Leakage and Model
-    Misspecification in Quantum Error Correction: Worked Numerical Cases'
-    (2026), §3 (mechanism).
+    Peter Kahl, 'The Cost of Sign-Blind Recovery under Coherent Noise: Worked Numerical Cases'
+    (2026), §4 (mechanism) and §3 (branch undo in diamond norm).
 
 Author:
     Peter Kahl
