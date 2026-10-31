@@ -5,7 +5,7 @@ interval_certification_check.py
 ===============================
 
 Version:
-    0.11.0 (2026-10-31)
+    0.12.0 (2026-10-31)
 
 Supplementary research code for:
 
@@ -109,34 +109,49 @@ round). They do not depend on the solver's accuracy. The instrument's
 definition (recovery table, code states, logical operators) is taken from
 ozguler_prop1_check.py.
 
+Two stages
+----------
+Propose (needs CVXPY and Clarabel): a floating-point solver proposes the
+certificates, which are shifted until interval arithmetic verifies them,
+and saved to output/interval_certificates.json.
+
+Verify (needs only NumPy and mpmath): the saved certificates are loaded and
+every bound is proved from them in interval arithmetic. The derivations are
+given in Appendix B of the companion note.
+
 Run
 ---
-    python interval_certification_check.py
+    python interval_certification_check.py            # propose, save, verify
+    python interval_certification_check.py --verify   # verify saved certificates only
 
-Requires mpmath (1.3 or later) in addition to the packages of
-prop52_numerical_check.py. About 5 to 10 minutes.
+Requires mpmath (1.3 or later). The propose stage also needs the packages of
+prop52_numerical_check.py. About 3 minutes for both stages; the verify stage
+alone takes about 2 minutes.
 """
 
 from __future__ import annotations
 
+import argparse
+import json
+import os
 import platform
 import time
 import warnings
 
-import cvxpy as cp
 import mpmath
 import numpy as np
 from mpmath import iv
 
 from ozguler_prop1_check import build_instrument, kraus_operators, mask_of
-from prop52_numerical_check import SOLVER, syndrome_classes
 
-SCRIPT_VERSION = "0.11.0"
+SCRIPT_VERSION = "0.12.0"
 THETAS = ("0.05", "0.1")
 DIM = 4
 N2 = DIM * DIM
 iv.dps = 40
 SHIFT = 1e-12          # relative shift used to make float certificates strictly feasible
+CERT_PATH = os.path.join("output", "interval_certificates.json")
+SOLVER = "CLARABEL"
 
 
 # ---------------------------------------------------------------------------
@@ -325,43 +340,123 @@ def conj_scale(W, lam_list, weights):
 
 
 # ---------------------------------------------------------------------------
-# Floating-point certificates
+# Serialisation of certificates (exact binary floats, round-tripped by JSON)
 # ---------------------------------------------------------------------------
 
-def solve(problem):
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        problem.solve(solver=SOLVER)
+def enc(X):
+    X = np.asarray(X, dtype=complex)
+    return {"re": X.real.tolist(), "im": X.imag.tolist()}
 
 
-def float_H(W, lam_list, weights):
-    H = np.zeros((N2, N2), dtype=complex)
-    for Wpm, lam, wt in zip(W, lam_list, weights):
-        A = np.kron(np.diag(np.conj(lam)), np.eye(DIM))
-        H += wt * A @ Wpm @ A.conj().T
-    return (H + H.conj().T) / 2
+def dec(d):
+    return np.array(d["re"], dtype=float) + 1j * np.array(d["im"], dtype=float)
 
 
-def max_trace_Y_below(H):
-    """Y maximising tr Y subject to H - Y (x) I >= 0."""
-    Y = cp.Variable((DIM, DIM), hermitian=True)
-    solve(cp.Problem(cp.Maximize(cp.real(cp.trace(Y))), [H - cp.kron(Y, np.eye(DIM)) >> 0]))
-    return (Y.value + Y.value.conj().T) / 2
+# ---------------------------------------------------------------------------
+# Interval building blocks shared by both stages
+# ---------------------------------------------------------------------------
+
+def interval_data(theta_str, N, sigmas):
+    lam = interval_eigs(N, theta_str)
+    absl = [[iv_abs(lam[s][k]) for k in range(DIM)] for s in range(len(lam))]
+    M = [[sum((absl[s][k] * absl[s][l] for s in sigmas), iv.mpf(0)) for l in range(DIM)] for k in range(DIM)]
+    Wm = [[M[k][l] - 1 for l in range(DIM)] for k in range(DIM)]
+    return lam, absl, Wm
 
 
-def min_trace_Y_above(H):
-    """Y minimising tr Y subject to Y (x) I - H >= 0."""
-    Y = cp.Variable((DIM, DIM), hermitian=True)
-    solve(cp.Problem(cp.Minimize(cp.real(cp.trace(Y))), [cp.kron(Y, np.eye(DIM)) - H >> 0]))
-    return (Y.value + Y.value.conj().T) / 2
+def lam_pair(lam, s):
+    return [lam[s], [(re, -im) for re, im in lam[s]]]
 
 
-def sign_blind_dual(lam_plus, classes):
-    """Float dual point (W_pm, rho_pm) for min over class policies of max over
-    signs of the diamond defect, in the logical-X basis (diagonal branches)."""
-    from prop52_numerical_check import choi_map
+def omega16():
+    return [[((iv.mpf(1) / 16 if (i % (DIM + 1) == 0 and j % (DIM + 1) == 0) else iv.mpf(0)), iv.mpf(0))
+             for j in range(N2)] for i in range(N2)]
+
+
+def check_upper(Zt, Wm):
+    Zi = [[to_iv(Zt[k, l]) for l in range(DIM)] for k in range(DIM)]
+    zero = [[iv.mpf(0)] * DIM for _ in range(DIM)]
+    return pd_certified(Zi, zero) and pd_certified([[Zi[k][l] - Wm[k][l] for l in range(DIM)]
+                                                    for k in range(DIM)], zero)
+
+
+def check_W_rho(Wc, Rc):
+    Wi = [point_matrix(W) for W in Wc]
+    Ri = [point_matrix(R) for R in Rc]
+    ok = all(pd_certified(*hermitian_parts(W)) for W in Wi)
+    ok &= all(pd_certified(*hermitian_parts(sub(kron_eye(R), W))) for R, W in zip(Ri, Wi))
+    return ok, Wi, Ri
+
+
+def check_Y_below(Hi, Y):
+    return pd_certified(*hermitian_parts(sub(Hi, kron_eye(point_matrix(Y)))))
+
+
+def check_Y_above(Hi, Y):
+    return pd_certified(*hermitian_parts(sub(kron_eye(point_matrix(Y)), Hi)))
+
+
+def trace_iv(Y):
+    return sum((to_iv(np.real(Y[k, k])) for k in range(DIM)), iv.mpf(0))
+
+
+# ---------------------------------------------------------------------------
+# Stage 1: propose certificates (needs CVXPY)
+# ---------------------------------------------------------------------------
+
+def propose(theta_str, N, inst):
+    import cvxpy as cp
+    from prop52_numerical_check import choi_map, syndrome_classes
+
+    def solve(problem):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            problem.solve(solver=SOLVER)
+
+    def float_H(W, lams, weights):
+        H = np.zeros((N2, N2), dtype=complex)
+        for Wpm, lam, wt in zip(W, lams, weights):
+            A = np.kron(np.diag(np.conj(lam)), np.eye(DIM))
+            H += wt * A @ Wpm @ A.conj().T
+        return (H + H.conj().T) / 2
+
+    def y_below(H):
+        Y = cp.Variable((DIM, DIM), hermitian=True)
+        solve(cp.Problem(cp.Maximize(cp.real(cp.trace(Y))), [H - cp.kron(Y, np.eye(DIM)) >> 0]))
+        return (Y.value + Y.value.conj().T) / 2
+
+    def y_above(H):
+        Y = cp.Variable((DIM, DIM), hermitian=True)
+        solve(cp.Problem(cp.Minimize(cp.real(cp.trace(Y))), [cp.kron(Y, np.eye(DIM)) - H >> 0]))
+        return (Y.value + Y.value.conj().T) / 2
+
+    theta = float(theta_str)
+    sigmas = sorted(inst["recovery"])
+    lam_f = float_eigs(N, theta)
+    lam, absl, Wm = interval_data(theta_str, N, sigmas)
+    cert = {"theta": theta_str}
+
+    # B.1: upper bound for branch undo
+    Wm_f = np.array([[float(mpmath.mpf(Wm[k][l].mid)) for l in range(DIM)] for k in range(DIM)])
+    Zt = cp.Variable((DIM, DIM), symmetric=True)
+    tt = cp.Variable()
+    solve(cp.Problem(cp.Minimize(tt), [Zt >> 0, Zt - Wm_f >> 0, cp.diag(Zt) <= tt]))
+    Ztv = (Zt.value + Zt.value.T) / 2
+    scale = max(1e-30, float(np.abs(Wm_f).max()))
+    for attempt in range(10):
+        shift = scale * SHIFT * 10 ** attempt + max(0.0, -np.linalg.eigvalsh(Ztv - Wm_f).min(),
+                                                    -np.linalg.eigvalsh(Ztv).min())
+        Zc = Ztv + shift * np.eye(DIM)
+        if check_upper(Zc, Wm):
+            break
+    cert["Z"] = enc(Zc)
+
+    # B.2: dual point for the sign-blind diamond problem, over syndrome classes
+    kp = {s: np.diag(lam_f[s]) for s in sigmas}
+    km = {s: np.diag(np.conj(lam_f[s])) for s in sigmas}
+    classes = syndrome_classes(kp, km)
     Om = np.outer(np.eye(DIM).reshape(-1), np.eye(DIM).reshape(-1)).astype(complex)
-    groups = [[[np.diag(lam_plus[s]) for s in c], [np.diag(np.conj(lam_plus[s])) for s in c]] for c in classes]
+    groups = [[[kp[s] for s in c], [km[s] for s in c]] for c in classes]
     maps = [[choi_map(g[sgn], DIM) for sgn in range(2)] for g in groups]
     JD = [cp.Variable((N2, N2), hermitian=True) for _ in groups]
     t = cp.Variable()
@@ -377,43 +472,74 @@ def sign_blind_dual(lam_plus, classes):
         w_cons.append(c_w)
         r_cons.append(c_r)
     solve(cp.Problem(cp.Minimize(t), cons))
+    cert["float_primal_sign_blind"] = 2 * float(t.value)
     W, R = [], []
     for c_w, c_r in zip(w_cons, r_cons):
         Wv = (c_w.dual_value + c_w.dual_value.conj().T) / 2
         e, v = np.linalg.eigh(Wv)
-        Wv = (v * np.clip(e, 0, None)) @ v.conj().T
+        W.append((v * np.clip(e, 0, None)) @ v.conj().T)
         Rv = (c_r.dual_value + c_r.dual_value.conj().T) / 2
         e, v = np.linalg.eigh(Rv)
-        Rv = (v * np.clip(e, 0, None)) @ v.conj().T
-        W.append(Wv)
-        R.append(Rv)
-    return W, R, 2 * float(t.value)
+        R.append((v * np.clip(e, 0, None)) @ v.conj().T)
+    a = SHIFT * max(np.abs(W[0]).max(), np.abs(W[1]).max())
+    Wc = [Wp + a * np.eye(N2) for Wp in W]
+    Rc = [Rp + (max(0.0, -np.linalg.eigvalsh(np.kron(Rp, np.eye(DIM)) - Wp).min()) + SHIFT * np.abs(Rp).max() + a)
+          * np.eye(DIM) for Wp, Rp in zip(Wc, R)]
+    cert["W"] = [enc(Wp) for Wp in Wc]
+    cert["rho"] = [enc(Rp) for Rp in Rc]
+    _, Wi, _ = check_W_rho(Wc, Rc)
+    Yd = {}
+    for s in sigmas:
+        Hi = conj_scale(Wi, lam_pair(lam, s), [iv.mpf(1), iv.mpf(1)])
+        Hf = float_H(Wc, [lam_f[s], np.conj(lam_f[s])], [1.0, 1.0])
+        Yf = y_below(Hf)
+        for attempt in range(10):
+            c = max(0.0, -np.linalg.eigvalsh(Hf - np.kron(Yf, np.eye(DIM))).min()) + \
+                SHIFT * 10 ** attempt * max(1e-30, np.abs(Hf).max())
+            Yc = Yf - c * np.eye(DIM)
+            if check_Y_below(Hi, Yc):
+                break
+        Yd[str(s)] = enc(Yc)
+    cert["Y_diamond"] = Yd
+
+    # B.3: infidelity dual
+    Om16i = omega16()
+    Om16f = Om / 16
+    Yi_ = {}
+    for s in sigmas:
+        Hi = conj_scale([Om16i, Om16i], lam_pair(lam, s), [iv.mpf(1) / 2, iv.mpf(1) / 2])
+        Hf = float_H([Om16f, Om16f], [lam_f[s], np.conj(lam_f[s])], [0.5, 0.5])
+        Yf = y_above(Hf)
+        for attempt in range(10):
+            c = max(0.0, -np.linalg.eigvalsh(np.kron(Yf, np.eye(DIM)) - Hf).min()) + \
+                SHIFT * 10 ** attempt * max(1e-30, np.abs(Hf).max())
+            Yc = Yf + c * np.eye(DIM)
+            if check_Y_above(Hi, Yc):
+                break
+        Yi_[str(s)] = enc(Yc)
+    cert["Y_infidelity"] = Yi_
+    return cert
 
 
 # ---------------------------------------------------------------------------
-# Report
+# Stage 2: verify certificates (NumPy and mpmath only)
 # ---------------------------------------------------------------------------
 
-def certify(theta_str, N, inst, passed):
+def verify(cert, N, inst, passed):
+    theta_str = cert["theta"]
     theta = float(theta_str)
     t0 = time.time()
     print(f"\n=== theta = {theta_str} ===")
-
-    # Consistency of the exact branch formula with the state-vector instrument.
     Kf = kraus_operators(inst, theta)
     Kx = float_branches(N, theta)
     gap = max(np.abs(Kf[s] - Kx[s]).max() for s in Kf)
-    zero_other = max((np.abs(Kx[s]).max() for s in Kx if s not in Kf), default=0.0)
     print(f" exact branch formula vs state-vector instrument: max difference {gap:.1e}")
-    passed.append((f"theta = {theta_str}: branch formula reproduces the instrument (to 1e-12)",
-                   gap < 1e-12 and zero_other < 1e-12))
+    passed.append((f"theta = {theta_str}: branch formula reproduces the instrument (to 1e-12)", gap < 1e-12))
 
-    lam_f = float_eigs(N, theta)                       # float, (sigma, k)
-    lam = interval_eigs(N, theta_str)                  # intervals
     sigmas = sorted(Kf)
-    absl = [[iv_abs(lam[s][k]) for k in range(DIM)] for s in range(len(lam))]
+    lam, absl, Wm = interval_data(theta_str, N, sigmas)
 
-    # --- 3. branch-undo infidelity and no-repair infidelity, exact enclosures
+    # B.4 and no repair
     F_undo = sum((sum(absl[s], iv.mpf(0)) ** 2 for s in sigmas), iv.mpf(0)) / 16
     F_none = sum(((sum((lam[s][k][0] for k in range(DIM)), iv.mpf(0))) ** 2 +
                   (sum((lam[s][k][1] for k in range(DIM)), iv.mpf(0))) ** 2 for s in sigmas), iv.mpf(0)) / 16
@@ -421,127 +547,94 @@ def certify(theta_str, N, inst, passed):
     print(f" infidelity, no repair     in [{lo(inf_none, 12)}, {hi(inf_none, 12)}]")
     print(f" infidelity, branch undo   in [{lo(inf_undo, 12)}, {hi(inf_undo, 12)}]")
 
-    # --- 1. diamond upper bound for branch undo
-    M = [[sum((absl[s][k] * absl[s][l] for s in sigmas), iv.mpf(0)) for l in range(DIM)] for k in range(DIM)]
-    Wm = [[M[k][l] - 1 for l in range(DIM)] for k in range(DIM)]
-    Wm_f = np.array([[float(mpmath.mpf(Wm[k][l].mid)) for l in range(DIM)] for k in range(DIM)])
-    Zt = cp.Variable((DIM, DIM), symmetric=True)
-    tt = cp.Variable()
-    solve(cp.Problem(cp.Minimize(tt), [Zt >> 0, Zt - Wm_f >> 0, cp.diag(Zt) <= tt]))
-    Ztv = (Zt.value + Zt.value.T) / 2
-    scale = max(1e-30, float(np.abs(Wm_f).max()))
-    for attempt in range(8):
-        shift = scale * SHIFT * 10 ** attempt + max(0.0, -np.linalg.eigvalsh(Ztv - Wm_f).min(),
-                                                    -np.linalg.eigvalsh(Ztv).min())
-        Zc = Ztv + shift * np.eye(DIM)
-        Zi = [[to_iv(Zc[k, l]) for l in range(DIM)] for k in range(DIM)]
-        zero = [[iv.mpf(0)] * DIM for _ in range(DIM)]
-        ok1 = pd_certified(Zi, zero)
-        ok2 = pd_certified([[Zi[k][l] - Wm[k][l] for l in range(DIM)] for k in range(DIM)], zero)
-        if ok1 and ok2:
-            break
-    t_cert = max(float(Zc[k, k]) for k in range(DIM))
-    d_undo_upper = iv.mpf(2) * iv.mpf(t_cert)
+    # B.1
+    Zc = dec(cert["Z"]).real
+    ok_up = check_upper(Zc, Wm)
+    d_undo_upper = iv.mpf(2) * max(to_iv(Zc[k, k]) for k in range(DIM))
     print(f" diamond defect, branch undo        <= {hi(d_undo_upper)}   (certificate "
-          f"{'verified' if ok1 and ok2 else 'NOT verified'})")
-    passed.append((f"theta = {theta_str}: branch-undo diamond upper bound certified", ok1 and ok2))
+          f"{'verified' if ok_up else 'NOT verified'})")
+    passed.append((f"theta = {theta_str}: branch-undo diamond upper bound certified", ok_up))
 
-    # --- 2. sign-blind diamond lower bound, per-syndrome policies
-    kp = {s: np.diag(lam_f[s]) for s in sigmas}
-    km = {s: np.diag(np.conj(lam_f[s])) for s in sigmas}
-    classes = syndrome_classes(kp, km)
-    W, R, primal = sign_blind_dual(lam_f, classes)
-    a = SHIFT * max(np.abs(W[0]).max(), np.abs(W[1]).max())
-    Wc = [Wp + a * np.eye(N2) for Wp in W]
-    Rc = []
-    for Wp, Rp in zip(Wc, R):
-        b = max(0.0, -np.linalg.eigvalsh(np.kron(Rp, np.eye(DIM)) - Wp).min()) + SHIFT * np.abs(Rp).max() + a
-        Rc.append(Rp + b * np.eye(DIM))
-    Wi = [point_matrix(Wp) for Wp in Wc]
-    Ri = [point_matrix(Rp) for Rp in Rc]
-    ok = all(pd_certified(*hermitian_parts(Wp)) for Wp in Wi)
-    ok &= all(pd_certified(*hermitian_parts(sub(kron_eye(Rp), Wp))) for Rp, Wp in zip(Ri, Wi))
+    # B.2
+    Wc = [dec(w) for w in cert["W"]]
+    Rc = [dec(r) for r in cert["rho"]]
+    ok, Wi, Ri = check_W_rho(Wc, Rc)
     total_Y = iv.mpf(0)
-    failures = 0
     for s in sigmas:
-        lam_pm = [lam[s], [(re, -im) for re, im in lam[s]]]
-        Hi = conj_scale(Wi, lam_pm, [iv.mpf(1), iv.mpf(1)])
-        Hf = float_H(Wc, [lam_f[s], np.conj(lam_f[s])], [1.0, 1.0])
-        Yf = max_trace_Y_below(Hf)
-        for attempt in range(8):
-            cshift = max(0.0, -np.linalg.eigvalsh(Hf - np.kron(Yf, np.eye(DIM))).min()) + \
-                SHIFT * 10 ** attempt * max(1e-30, np.abs(Hf).max())
-            Yc = Yf - cshift * np.eye(DIM)
-            Yi = point_matrix(Yc)
-            if pd_certified(*hermitian_parts(sub(Hi, kron_eye(Yi)))):
-                break
-        else:
-            failures += 1
-        total_Y += sum((Yi[k][k][0] for k in range(DIM)), iv.mpf(0))
-    ok &= failures == 0
-    Om_tr = []
-    for Wp in Wi:            # tr(W Omega) = sum_{k,l} W[kk, ll]
-        Om_tr.append(sum((Wp[k * DIM + k][l * DIM + l][0] for k in range(DIM) for l in range(DIM)), iv.mpf(0)))
+        Y = dec(cert["Y_diamond"][str(s)])
+        Hi = conj_scale(Wi, lam_pair(lam, s), [iv.mpf(1), iv.mpf(1)])
+        ok &= check_Y_below(Hi, Y)
+        total_Y += trace_iv(Y)
+    Om_tr = [sum((Wp[k * DIM + k][l * DIM + l][0] for k in range(DIM) for l in range(DIM)), iv.mpf(0)) for Wp in Wi]
     norm = sum((sum((Rp[k][k][0] for k in range(DIM)), iv.mpf(0)) for Rp in Ri), iv.mpf(0))
+    ok &= norm.a > 0
     d_blind_lower = 2 * (total_Y - Om_tr[0] - Om_tr[1]) / norm
     print(f" diamond defect, sign-blind (any syndrome-dependent repair) >= {lo(d_blind_lower)}"
-          f"   (float primal {primal:.6e}; certificate {'verified' if ok else 'NOT verified'})")
+          f"   (float primal {cert.get('float_primal_sign_blind', float('nan')):.6e}; certificate "
+          f"{'verified' if ok else 'NOT verified'})")
     passed.append((f"theta = {theta_str}: sign-blind diamond lower bound certified for all 256 syndromes", ok))
 
-    # --- 4. sign-blind infidelity lower bound
-    Om16 = [[((iv.mpf(1) / 16 if (i % (DIM + 1) == 0 and j % (DIM + 1) == 0) else iv.mpf(0)), iv.mpf(0))
-             for j in range(N2)] for i in range(N2)]
-    Om16_f = np.outer(np.eye(DIM).reshape(-1), np.eye(DIM).reshape(-1)) / 16
+    # B.3
+    Om16i = omega16()
+    okf = True
     total_Yf = iv.mpf(0)
-    okf, failures = True, 0
     for s in sigmas:
-        lam_pm = [lam[s], [(re, -im) for re, im in lam[s]]]
-        Hi = conj_scale([Om16, Om16], lam_pm, [iv.mpf(1) / 2, iv.mpf(1) / 2])
-        Hf = float_H([Om16_f, Om16_f], [lam_f[s], np.conj(lam_f[s])], [0.5, 0.5])
-        Yf = min_trace_Y_above(Hf)
-        for attempt in range(8):
-            cshift = max(0.0, -np.linalg.eigvalsh(np.kron(Yf, np.eye(DIM)) - Hf).min()) + \
-                SHIFT * 10 ** attempt * max(1e-30, np.abs(Hf).max())
-            Yc = Yf + cshift * np.eye(DIM)
-            Yi = point_matrix(Yc)
-            if pd_certified(*hermitian_parts(sub(kron_eye(Yi), Hi))):
-                break
-        else:
-            failures += 1
-        total_Yf += sum((Yi[k][k][0] for k in range(DIM)), iv.mpf(0))
-    okf &= failures == 0
+        Y = dec(cert["Y_infidelity"][str(s)])
+        Hi = conj_scale([Om16i, Om16i], lam_pair(lam, s), [iv.mpf(1) / 2, iv.mpf(1) / 2])
+        okf &= check_Y_above(Hi, Y)
+        total_Yf += trace_iv(Y)
     inf_blind_lower = 1 - total_Yf
     print(f" infidelity, sign-blind (any syndrome-dependent repair, worse sign) >= "
           f"{lo(inf_blind_lower)}   (certificate {'verified' if okf else 'NOT verified'})")
     passed.append((f"theta = {theta_str}: sign-blind infidelity lower bound certified for all 256 syndromes", okf))
 
-    r_d = (d_blind_lower / d_undo_upper)
-    r_f = (inf_blind_lower / inf_undo)
-    print(f" certified ratios: diamond >= {lo(r_d, 6)}; infidelity >= {lo(r_f, 6)}"
-          f"   ({time.time() - t0:.0f} s)")
-    return r_d, r_f
+    r_d = d_blind_lower / d_undo_upper
+    r_f = inf_blind_lower / inf_undo
+    print(f" certified ratios: diamond >= {lo(r_d, 6)}; infidelity >= {lo(r_f, 6)}   ({time.time() - t0:.0f} s)")
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser.add_argument("--verify", action="store_true",
+                        help="verify the saved certificates only (needs NumPy and mpmath, not CVXPY)")
+    parser.add_argument("--certificates", default=CERT_PATH, help="certificate file (default: %(default)s)")
+    args = parser.parse_args()
+
     print("=== Run configuration ===")
     print(f"script version = {SCRIPT_VERSION}")
     print(f"Python version = {platform.python_version()}")
     print(f"NumPy version = {np.__version__}")
     print(f"mpmath version = {mpmath.__version__}; interval precision = {iv.dps} decimal digits")
-    print(f"CVXPY version = {cp.__version__}; solver = {SOLVER} (used only to propose certificates)")
+    if args.verify:
+        print(f"mode = verify only; certificates from {args.certificates}")
+    else:
+        import cvxpy as cp
+        print(f"mode = propose, save and verify; CVXPY version = {cp.__version__}; solver = {SOLVER} "
+              "(used only to propose certificates)")
     print(f"thetas = {THETAS} (exact decimals); one round; L = 3")
 
-    passed = []
     inst = build_instrument(3)
     N = branch_counts(inst)
     print(f"\nbranch counts: {int(N.sum())} error patterns, {int((N.sum(axis=(1, 2)) > 0).sum())} syndromes")
-    for th in THETAS:
-        certify(th, N, inst, passed)
+
+    if not args.verify:
+        certs = {"script_version": SCRIPT_VERSION, "certificates": [propose(th, N, inst) for th in THETAS]}
+        os.makedirs(os.path.dirname(args.certificates) or ".", exist_ok=True)
+        with open(args.certificates, "w") as f:
+            json.dump(certs, f)
+        print(f"certificates saved to {args.certificates}")
+    with open(args.certificates) as f:
+        certs = json.load(f)
+
+    passed = []
+    for cert in certs["certificates"]:
+        verify(cert, N, inst, passed)
 
     print("\n=== Summary ===")
     for label, ok in passed:
         print(f"{'PASS' if ok else 'FAIL'}  {label}")
-    print("Certified bounds are proved by interval arithmetic; the floating-point solver only proposes them.")
+    print("Certified bounds are proved by interval arithmetic from the saved certificates; "
+          "the floating-point solver only proposes them.")
 
 
 if __name__ == "__main__":

@@ -1,12 +1,13 @@
 === Run configuration ===
-script version = 0.11.0
+script version = 0.12.0
 Python version = 3.12.3
 NumPy version = 2.4.4
 mpmath version = 1.3.0; interval precision = 40 decimal digits
-CVXPY version = 1.9.3; solver = CLARABEL (used only to propose certificates)
+mode = propose, save and verify; CVXPY version = 1.9.3; solver = CLARABEL (used only to propose certificates)
 thetas = ('0.05', '0.1') (exact decimals); one round; L = 3
 
 branch counts: 262144 error patterns, 256 syndromes
+certificates saved to output/interval_certificates.json
 
 === theta = 0.05 ===
  exact branch formula vs state-vector instrument: max difference 2.1e-15
@@ -15,7 +16,7 @@ branch counts: 262144 error patterns, 256 syndromes
  diamond defect, branch undo        <= 8.4498261e-8   (certificate verified)
  diamond defect, sign-blind (any syndrome-dependent repair) >= 0.000360796   (float primal 3.727241e-04; certificate verified)
  infidelity, sign-blind (any syndrome-dependent repair, worse sign) >= 7.1780992e-6   (certificate verified)
- certified ratios: diamond >= 4269.86; infidelity >= 170.057   (120 s)
+ certified ratios: diamond >= 4269.86; infidelity >= 170.057   (43 s)
 
 === theta = 0.1 ===
  exact branch formula vs state-vector instrument: max difference 2.6e-15
@@ -24,7 +25,7 @@ branch counts: 262144 error patterns, 256 syndromes
  diamond defect, branch undo        <= 4.974538e-6   (certificate verified)
  diamond defect, sign-blind (any syndrome-dependent repair) >= 0.0029191751   (float primal 2.926065e-03; certificate verified)
  infidelity, sign-blind (any syndrome-dependent repair, worse sign) >= 0.00012629093   (certificate verified)
- certified ratios: diamond >= 586.823; infidelity >= 50.7755   (127 s)
+ certified ratios: diamond >= 586.823; infidelity >= 50.7755   (43 s)
 
 === Summary ===
 PASS  theta = 0.05: branch formula reproduces the instrument (to 1e-12)
@@ -35,4 +36,4 @@ PASS  theta = 0.1: branch formula reproduces the instrument (to 1e-12)
 PASS  theta = 0.1: branch-undo diamond upper bound certified
 PASS  theta = 0.1: sign-blind diamond lower bound certified for all 256 syndromes
 PASS  theta = 0.1: sign-blind infidelity lower bound certified for all 256 syndromes
-Certified bounds are proved by interval arithmetic; the floating-point solver only proposes them.
+Certified bounds are proved by interval arithmetic from the saved certificates; the floating-point solver only proposes them.

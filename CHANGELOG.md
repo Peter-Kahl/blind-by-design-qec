@@ -2,6 +2,22 @@
 
 All notable changes to this repository are recorded here.
 
+## 0.12.0 — 2026-10-31
+
+Makes the interval certification independently checkable. Prompted by a second external audit of the companion note. Other scripts and their reference outputs are unchanged.
+
+### `interval_certification_check.py` (0.11.0 → 0.12.0)
+
+- Split into two stages. The propose stage (needs CVXPY) builds the certificates, shifts them until interval arithmetic verifies them, and saves them to `output/interval_certificates.json`. The verify stage (`--verify`, needs only NumPy and mpmath) loads the saved certificates and proves every bound from them. A default run does both, so the reference output exercises the verify path.
+- CVXPY and `prop52_numerical_check.py` are imported only in the propose stage.
+- Certified values are unchanged from 0.11.0 to the precision printed.
+
+### Repository
+
+- New archived certificates `output/interval_certificates.json` and a verify-only reference output `output/interval_certification_verify_output.txt`, produced in an environment with NumPy and mpmath alone.
+- `README.md`: describes branches as very nearly coherent rotations, with the polar decomposition and the non-unitary residual, matching the companion note; documents the verify mode.
+- `CITATION.cff` and `.zenodo.json` updated.
+
 ## 0.11.0 — 2026-10-31
 
 Adds certified bounds by interval arithmetic. Other scripts and their reference outputs are unchanged.
