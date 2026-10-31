@@ -38,6 +38,7 @@ This repository contains the five scripts behind the paper's computations, three
 | `blind_by_design_continuous_misspecification.py` | §6.4.2 | Model-relative blindness, detected and repaired from the records already held |
 | `two_round_repair_check.py` | Companion note, §3 (extends §5.3.1, Table 7) | Pointwise versus uniform repair over two rounds of the toric instrument, with the two-round syndrome history discarded or used |
 | `branch_mechanism_check.py` | Companion note, §4 (and §3 for branch undo in diamond norm) | Why the sign matters: each syndrome branch is a coherent logical rotation whose direction reverses with the sign; branch-undo repair in infidelity and diamond norm |
+| `interval_certification_check.py` | Companion note, §2 | Certified bounds, by interval arithmetic, behind the headline sign-blind to sign-aware ratios at θ = 0.05 and 0.1 |
 | `infidelity_and_calibration_check.py` | Companion note, §4 | The same comparison by entanglement infidelity; infidelity accumulated over up to 300 rounds, against an idealised logical twirl; sensitivity of the known-sign repairs to calibration error, over one and many rounds |
 
 ## The scripts
@@ -92,6 +93,19 @@ In the reference run every branch is a coherent logical rotation (singular value
 | 0.1 | 4.97 × 10⁻⁶ | 9.95 × 10⁻⁶ |
 
 These are tighter than the solver's sign-known, history-used upper bounds in `prop52_numerical_check.py` (9.9 × 10⁻⁷ and 7.2 × 10⁻⁶) and `two_round_repair_check.py` (4.0 × 10⁻⁶ and 1.8 × 10⁻⁵). The conservative sign-blind to sign-known ratio is therefore about 4,400 at θ = 0.05 and 590 at θ = 0.1, the same over one and two rounds. For the rarest branches the eigenphase spread exceeds π, where it no longer measures the rotation angle reliably; the infidelity shares do not depend on it.
+
+### `interval_certification_check.py`
+
+The other scripts report primal–dual brackets constructed in double precision. This script certifies the four bounds behind the companion's headline ratios at θ = 0.05 and 0.1 (one round, L = 3) by interval arithmetic:
+
+1. an upper bound on the diamond-norm defect of branch undo;
+2. a lower bound on the diamond-norm defect of every sign-blind repair that may depend on the syndrome (one repair per syndrome, worst sign);
+3. the entanglement infidelity of branch undo, enclosed exactly; and
+4. a lower bound on the worst-sign infidelity of every sign-blind, syndrome-dependent repair.
+
+Each branch operator is written exactly as K_σ = Σ_L a_{σ,L} X_L, where X_L ranges over the four logical X operators and a_{σ,L} = Σ_w N[σ, L, w] cos(θ/2)^(18−w) (−i sin(θ/2))^w, with integer counts N obtained by enumerating all 2¹⁸ X-error patterns. The script checks that the formula reproduces the state-vector instrument (to 3 × 10⁻¹⁵). In the logical-X basis every branch is diagonal. A floating-point solver proposes each certificate (a Watrous dual point for the upper bound; dual points of the repair problems for the lower bounds); mpmath interval arithmetic at 40 significant digits then proves feasibility by interval Cholesky factorisation for each of the 256 syndromes and encloses the bound. The docstring gives the derivations.
+
+Reference run: branch undo has diamond defect at most 8.450 × 10⁻⁸ and 4.975 × 10⁻⁶, and infidelity 4.2210 × 10⁻⁸ and 2.4872 × 10⁻⁶; every sign-blind, syndrome-dependent repair has diamond defect at least 3.608 × 10⁻⁴ and 2.919 × 10⁻³, and worst-sign infidelity at least 7.178 × 10⁻⁶ and 1.2629 × 10⁻⁴, at θ = 0.05 and 0.1. The certified ratios are at least 4,269 and 586 in diamond norm and 170 and 50.7 in infidelity. The certified sign-blind diamond bounds are about 3 per cent weaker than the floating-point brackets of `prop52_numerical_check.py`, because of the shifts that make the certificates strictly feasible.
 
 ### `infidelity_and_calibration_check.py`
 
@@ -166,6 +180,7 @@ The analytical and interpretive claims depend on the definitions, assumptions an
 - NumPy 1.20 or later for `prop52_numerical_check.py`; NumPy 1.17 or later for the other NumPy scripts
 - CVXPY 1.4 or later, with the Clarabel solver installed by default (`prop52_numerical_check.py`, `two_round_repair_check.py`, `branch_mechanism_check.py` and `infidelity_and_calibration_check.py` only)
 - Stim and PyMatching (`audit_checks.py` only)
+- mpmath 1.3 or later (`interval_certification_check.py` only)
 
 ```bash
 python3 -m venv .venv
@@ -189,13 +204,14 @@ python blind_by_design_continuous_misspecification.py --kappa 1
 python two_round_repair_check.py
 python branch_mechanism_check.py
 python infidelity_and_calibration_check.py
+python interval_certification_check.py
 ```
 
-`prop52_numerical_check.py` imports `ozguler_prop1_check.py`, and the three companion scripts import both (`branch_mechanism_check.py` also imports `two_round_repair_check.py`), so run them from the repository folder. The last command reproduces the parameter-sensitivity figures quoted in §6.4.2. Run times on a laptop are seconds for the repetition-code and continuous scripts, under a minute for the toric-code check and for the audit without `--lemma-checks`, about one to two minutes for the audit with `--lemma-checks`, about 20 to 30 minutes for `prop52_numerical_check.py`, most of it in section 4, the optimal repairs, about 10 to 15 minutes for `two_round_repair_check.py` at its two default angles, about a minute for `branch_mechanism_check.py`, and about 7 to 8 minutes for `infidelity_and_calibration_check.py`. `audit_checks.py` also has a `--mirror` mode, a mode for saved `.stim` circuits, and a self-contained demonstration when run without arguments; the demonstration uses a different circuit and does not reproduce the paper's figures. Use `--help` on either of the two scripts with options.
+`prop52_numerical_check.py` imports `ozguler_prop1_check.py`, and the three companion scripts import both (`branch_mechanism_check.py` also imports `two_round_repair_check.py`), so run them from the repository folder. The last command reproduces the parameter-sensitivity figures quoted in §6.4.2. Run times on a laptop are seconds for the repetition-code and continuous scripts, under a minute for the toric-code check and for the audit without `--lemma-checks`, about one to two minutes for the audit with `--lemma-checks`, about 20 to 30 minutes for `prop52_numerical_check.py`, most of it in section 4, the optimal repairs, about 10 to 15 minutes for `two_round_repair_check.py` at its two default angles, about a minute for `branch_mechanism_check.py`, about 10 to 12 minutes for `infidelity_and_calibration_check.py`, and about 4 to 5 minutes for `interval_certification_check.py`. `audit_checks.py` also has a `--mirror` mode, a mode for saved `.stim` circuits, and a self-contained demonstration when run without arguments; the demonstration uses a different circuit and does not reproduce the paper's figures. Use `--help` on either of the two scripts with options.
 
 ## Reference output
 
-The `output/` folder holds the complete, unedited console output of each reference run. The first six were produced by version **0.6.1** of the scripts, the seventh by version **0.7.0** of `two_round_repair_check.py`, the eighth by version **0.9.0** of `branch_mechanism_check.py`, and the last by version **0.10.0** of `infidelity_and_calibration_check.py`, all with Python 3.12.3, NumPy 2.4.4, Stim 1.16.0, PyMatching 2.4.0, CVXPY 1.9.3 and Clarabel 0.11.1:
+The `output/` folder holds the complete, unedited console output of each reference run. The first six were produced by version **0.6.1** of the scripts, the seventh by version **0.7.0** of `two_round_repair_check.py`, the eighth by version **0.9.0** of `branch_mechanism_check.py`, the ninth by version **0.10.0** of `infidelity_and_calibration_check.py`, and the last by version **0.11.0** of `interval_certification_check.py` (with mpmath 1.3.0), all with Python 3.12.3, NumPy 2.4.4, Stim 1.16.0, PyMatching 2.4.0, CVXPY 1.9.3 and Clarabel 0.11.1:
 
 | File | Command |
 |---|---|
@@ -208,6 +224,7 @@ The `output/` folder holds the complete, unedited console output of each referen
 | `two_round_repair_check_output.txt` | `python two_round_repair_check.py` |
 | `branch_mechanism_check_output.txt` | `python branch_mechanism_check.py` |
 | `infidelity_and_calibration_check_output.txt` | `python infidelity_and_calibration_check.py` |
+| `interval_certification_check_output.txt` | `python interval_certification_check.py` |
 
 The five outputs of the other scripts were regenerated in the same environment and are identical to the 0.1.0 reference files except for the version line. The elapsed-time line printed by the continuous script is omitted from its reference files, since it varies between runs. To compare a new run with a reference file:
 
@@ -243,6 +260,7 @@ blind-by-design-qec/
 ├── two_round_repair_check.py
 ├── branch_mechanism_check.py
 ├── infidelity_and_calibration_check.py
+├── interval_certification_check.py
 ├── docs/
 │   └── reliance_note_ozguler2026.md
 ├── output/
@@ -254,14 +272,15 @@ blind-by-design-qec/
 │   ├── continuous_misspecification_kappa1_output.txt
 │   ├── two_round_repair_check_output.txt
 │   ├── branch_mechanism_check_output.txt
-│   └── infidelity_and_calibration_check_output.txt
+│   ├── infidelity_and_calibration_check_output.txt
+│   └── interval_certification_check_output.txt
 └── assets/
     └── blind-by-design-qec-3.jpg
 ```
 
 ## Version correspondence
 
-The figures reported in Version 1.0 of the paper, including the numerical checks of §5.3.1, correspond to version **0.6.1** of this software. Version **0.7.0** adds `two_round_repair_check.py`, version **0.8.0** adds `infidelity_and_calibration_check.py`, and version **0.9.0** adds `branch_mechanism_check.py` and extends `infidelity_and_calibration_check.py`; their figures are reported in the technical companion. Version **0.9.1** changes documentation and metadata only. Version **0.10.0** adds the sign-error analysis to `infidelity_and_calibration_check.py`. None of these versions changes the five earlier scripts or their reference outputs, so each reproduces every figure of the paper as well. Versions 0.1.0 to 0.6.0 accompanied earlier drafts; the results of the other four scripts are unchanged throughout. Use the archived release of the matching version when reproducing or citing figures. See `CHANGELOG.md` for the history of changes.
+The figures reported in Version 1.0 of the paper, including the numerical checks of §5.3.1, correspond to version **0.6.1** of this software. Version **0.7.0** adds `two_round_repair_check.py`, version **0.8.0** adds `infidelity_and_calibration_check.py`, and version **0.9.0** adds `branch_mechanism_check.py` and extends `infidelity_and_calibration_check.py`; their figures are reported in the technical companion. Version **0.9.1** changes documentation and metadata only. Version **0.10.0** adds the sign-error analysis to `infidelity_and_calibration_check.py`, and version **0.11.0** adds `interval_certification_check.py`. None of these versions changes the five earlier scripts or their reference outputs, so each reproduces every figure of the paper as well. Versions 0.1.0 to 0.6.0 accompanied earlier drafts; the results of the other four scripts are unchanged throughout. Use the archived release of the matching version when reproducing or citing figures. See `CHANGELOG.md` for the history of changes.
 
 ## Citation
 

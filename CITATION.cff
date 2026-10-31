@@ -7,7 +7,7 @@ authors:
     given-names: "Peter"
     affiliation: "Independent researcher, Lex et Ratio"
     orcid: "https://orcid.org/0009-0003-1616-4843"
-version: "0.10.0"
+version: "0.11.0"
 date-released: "2026-10-31"
 repository-code: "https://github.com/Peter-Kahl/blind-by-design-qec"
 url: "https://www.lexetratio.com"
@@ -29,7 +29,8 @@ abstract: >-
   signs; and an analysis of that comparison by entanglement infidelity, over
   up to 300 rounds against an idealised twirl, and under calibration error;
   a branch-by-branch analysis showing why the sign matters; and the cost of
-  sign errors, with the sentinel shots needed to avoid them.
+  sign errors, with the sentinel shots needed to avoid them; and certified
+  bounds, by interval arithmetic, behind the headline ratios.
   Includes reference outputs and a reliance note.
 keywords:
   - "quantum error correction"

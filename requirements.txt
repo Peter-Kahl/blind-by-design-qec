@@ -10,8 +10,10 @@ cvxpy>=1.4
 # Stim and PyMatching: audit_checks.py only.
 stim
 pymatching
+# mpmath (interval arithmetic): interval_certification_check.py only.
+mpmath>=1.3
 
 # Reference runs (output/) were produced with:
 #   Python 3.12.3, NumPy 2.4.4, Stim 1.16.0, PyMatching 2.4.0,
-#   CVXPY 1.9.3, Clarabel 0.11.1
+#   CVXPY 1.9.3, Clarabel 0.11.1, mpmath 1.3.0
 # For exact textual reproduction, use those versions.

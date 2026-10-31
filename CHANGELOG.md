@@ -2,6 +2,20 @@
 
 All notable changes to this repository are recorded here.
 
+## 0.11.0 — 2026-10-31
+
+Adds certified bounds by interval arithmetic. Other scripts and their reference outputs are unchanged.
+
+### `interval_certification_check.py` (new)
+
+- Writes each branch operator of the L = 3 instrument exactly, as a combination of the four logical X operators with coefficients given by integer counts of X-error patterns (by syndrome, logical class and weight) and powers of cos(θ/2) and sin(θ/2); checks the formula against the state-vector instrument (agreement to 3 × 10⁻¹⁵).
+- Certifies, at θ = 0.05 and 0.1 (exact decimals), one round: an upper bound on the diamond defect of branch undo (Watrous dual point on the Schur-multiplier Choi matrix); a lower bound on the diamond defect of every sign-blind, syndrome-dependent repair (dual point of the min-max repair problem, verified for each of the 256 syndromes); the exact infidelity of branch undo; and a lower bound on the worst-sign infidelity of every sign-blind, syndrome-dependent repair. Feasibility is proved by interval Cholesky factorisation in mpmath at 40 significant digits; the floating-point solver only proposes the certificates.
+- Reference-run findings: certified ratios of at least 4,269 (diamond) and 170.0 (infidelity) at θ = 0.05, and 586.8 and 50.8 at θ = 0.1. The certified infidelity ratios are slightly below the floating-point figures previously quoted in the companion (171 and 51), which now uses the certified values.
+
+### Repository
+
+- `README.md`, `CITATION.cff`, `.zenodo.json` and `requirements.txt` (mpmath) updated; new reference output `output/interval_certification_check_output.txt`.
+
 ## 0.10.0 — 2026-10-31
 
 Adds a sign-error analysis, prompted by an external technical audit of the companion note. Other scripts and their reference outputs are unchanged.
