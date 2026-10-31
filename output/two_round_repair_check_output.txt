@@ -1,0 +1,49 @@
+=== Run configuration ===
+script version = 0.7.0
+Python version = 3.12.3
+NumPy version = 2.4.4
+CVXPY version = 1.9.3
+solver = CLARABEL 0.11.1
+thetas = (0.05, 0.1); pooling threshold for sign-blind repairs = 1e-08
+diamond norm unnormalised, range [0, 2]
+
+=== theta = 0.05, two rounds, one repair after both rounds ===
+ one-round classes 20; two-round classes 201, covering 65536 of 65536 histories
+ largest class-map residual 7.5e-20; completeness residual 6.3e-15
+ Fitted unitary repair at the right and the wrong sign, and no repair (upper bounds):
+  right sign 2.917e-05   wrong sign 1.509e-03   no repair 7.551e-04 (+theta), 7.551e-04 (-theta)
+ (sign-known optima done, 163 s)
+ Best repair over all channels, as [lower bound, achieved upper bound]:
+  sign known,  history discarded  [2.730e-05, 2.914e-05]
+  both signs,  history discarded  [7.536e-04, 7.551e-04]
+  sign known,  history used       [1.088e-07, 4.020e-06]   (201 repairs)
+  both signs,  history used       [7.442e-04, 7.461e-04]   (35 repairs, plus one shared by 166 classes of total probability 1.5e-08)
+  (221 s)
+ Sign-blind repair: using the history lowers the defect by at most 1.5 per cent relative to no repair
+ Conservative ratio, sign-blind lower bound / sign-known upper bound (history used): 185
+
+=== theta = 0.10, two rounds, one repair after both rounds ===
+ one-round classes 20; two-round classes 206, covering 65536 of 65536 histories
+ largest class-map residual 6.9e-18; completeness residual 1.3e-14
+ Fitted unitary repair at the right and the wrong sign, and no repair (upper bounds):
+  right sign 5.109e-04   wrong sign 1.227e-02   no repair 6.153e-03 (+theta), 6.153e-03 (-theta)
+ (sign-known optima done, 188 s)
+ Best repair over all channels, as [lower bound, achieved upper bound]:
+  sign known,  history discarded  [5.080e-04, 5.109e-04]
+  both signs,  history discarded  [6.153e-03, 6.153e-03]
+  sign known,  history used       [9.811e-06, 1.771e-05]   (206 repairs)
+  both signs,  history used       [5.843e-03, 5.849e-03]   (80 repairs, plus one shared by 126 classes of total probability 4.2e-08)
+  (295 s)
+ Sign-blind repair: using the history lowers the defect by at most 5.0 per cent relative to no repair
+ Conservative ratio, sign-blind lower bound / sign-known upper bound (history used): 330
+
+=== Summary ===
+PASS  theta = 0.05: class maps and completeness exact to rounding
+PASS  theta = 0.05: sign-blind repair, history used, more than twice the known-sign optimum
+PASS  theta = 0.05: using the history helps the sign-blind repair less than the known-sign one
+PASS  theta = 0.05: no repair within 3 per cent of the sign-blind lower bound, history discarded
+PASS  theta = 0.10: class maps and completeness exact to rounding
+PASS  theta = 0.10: sign-blind repair, history used, more than twice the known-sign optimum
+PASS  theta = 0.10: using the history helps the sign-blind repair less than the known-sign one
+PASS  theta = 0.10: no repair within 3 per cent of the sign-blind lower bound, history discarded
+SDP solves not reported 'optimal' by the solver: 23 (optimal_inaccurate). Reported brackets are constructed independently of solver tolerance; both ends are floating-point estimates, not interval-certified.
