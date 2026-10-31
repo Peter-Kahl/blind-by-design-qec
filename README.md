@@ -1,5 +1,7 @@
 # Blind by Design: Computational Supplement
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 <p align="left">
   <img
     src="assets/blind-by-design-qec-3.jpg"
