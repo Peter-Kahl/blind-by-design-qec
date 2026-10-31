@@ -1,5 +1,5 @@
 === Run configuration ===
-script version = 0.9.0
+script version = 0.10.0
 Python version = 3.12.3
 NumPy version = 2.4.4
 CVXPY version = 1.9.3
@@ -108,12 +108,31 @@ diamond norm unnormalised, range [0, 2]; infidelity = 1 - entanglement fidelity
   twirled, no repair (best sign-blind policy computed): 1.269e-04, 1.258e-02, 3.703e-02
   largest change in 300-round branch-undo infidelity over the eta grid: x1.51
 
+=== 4. Sign error: branch undo with the sign estimated once, 300 rounds ===
+
+ theta = 0.05: right sign 1.2663e-05; wrong sign 1.4871e-02; twirl 2.1758e-03
+  P(wrong sign)   expected infidelity   times ideal   twirl / expected   sentinel shots
+  0.05            7.556e-04               59.7            2.9            1083
+  0.01            1.613e-04               12.7           13.5            2165
+  0.001           2.752e-05                2.2           79.1            3819
+  break-even with the twirl: P(wrong sign) = 0.146 (447 shots)
+  within a factor of 2 of the ideal: P(wrong sign) <= 8.52e-04 (3937 shots)
+
+ theta = 0.10: right sign 7.4562e-04; wrong sign 4.1405e-01; twirl 3.7030e-02
+  P(wrong sign)   expected infidelity   times ideal   twirl / expected   sentinel shots
+  0.05            2.141e-02               28.7            1.7            271
+  0.01            4.879e-03                6.5            7.6            541
+  0.001           1.159e-03                1.6           32.0            953
+  break-even with the twirl: P(wrong sign) = 0.088 (183 shots)
+  within a factor of 2 of the ideal: P(wrong sign) <= 1.80e-03 (847 shots)
+
 === Summary ===
 PASS  infidelity: sign-blind, history used, more than twice the known-sign optimum
 PASS  infidelity: brackets ordered (lower <= upper)
 PASS  accumulation: unrepaired infidelity grows faster than the twirled channel's, which grows linearly (10 -> 100 rounds, within 5 per cent)
 PASS  accumulation: best known-sign policy below every sign-blind policy computed, at every N
 PASS  calibration: known-sign repair at 1 per cent error still beats no repair
-FAIL  calibration: over 300 rounds, a calibration error up to 10 per cent changes branch-undo infidelity by less than a factor of 2, and it stays 10 times below the twirl
+PASS  calibration: over 300 rounds, with a calibration error up to 10 per cent, branch-undo infidelity stays more than 10 times below the twirl
+PASS  sign error: break-even with the twirl at a wrong-sign probability below one half, and the factor-of-2 threshold stricter
 SDP solves not reported 'optimal' by the solver: 42 (optimal_inaccurate). Brackets and defects are constructed independently of solver tolerance; floating-point estimates, not interval-certified.
-(elapsed 447 s)
+(elapsed 679 s)

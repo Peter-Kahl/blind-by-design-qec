@@ -2,6 +2,22 @@
 
 All notable changes to this repository are recorded here.
 
+## 0.10.0 — 2026-10-31
+
+Adds a sign-error analysis, prompted by an external technical audit of the companion note. Other scripts and their reference outputs are unchanged.
+
+### `infidelity_and_calibration_check.py` (0.9.0 → 0.10.0)
+
+- New part 4: branch undo with the sign estimated once, wrong with probability q, and used for all 300 rounds. Reports the expected infidelity (1 − q) I_right + q I_wrong for q = 0.05, 0.01 and 0.001, its ratio to the ideal and to the twirl, the wrong-sign probabilities at which branch undo breaks even with the twirl and stays within a factor of 2 of the ideal, and the number of independent sentinel shots (Y-basis readout, majority vote, exact binomial tail) needed for each.
+- Reference-run findings: at q = 0.05 the advantage over the twirl falls from 172-fold to 2.9-fold (θ = 0.05) and from 50-fold to 1.7-fold (θ = 0.1); break-even at q ≈ 0.146 and 0.088 (447 and 183 shots); within a factor of 2 of the ideal for q below 8.5 × 10⁻⁴ and 1.8 × 10⁻³ (3,937 and 847 shots).
+- Parts 1 to 3 are unchanged; their output is identical to that of 0.9.0 apart from the version line and the summary.
+- Correction: the reference output archived with 0.9.0 was generated before the calibration summary check was restated, and so shows the original check (a factor-of-2 limit on the change in 300-round infidelity) as FAIL, although the 0.9.0 script contains the restated check. The 0.10.0 output is generated from the current script; the restated check passes.
+
+### Repository
+
+- `README.md` explains how the conservative two-round ratios printed by `two_round_repair_check.py` (330 and 185) relate to the tighter figures from branch undo in `branch_mechanism_check.py` (about 590 and 4,400), which solve the same two-round problem.
+- `README.md`, `CITATION.cff` and `.zenodo.json` updated; `output/infidelity_and_calibration_check_output.txt` regenerated.
+
 ## 0.9.1 — 2026-10-31
 
 Documentation and metadata only. No computation, script version or reference output changes.

@@ -5,7 +5,7 @@ infidelity_and_calibration_check.py
 ===================================
 
 Version:
-    0.9.0 (2026-10-31)
+    0.10.0 (2026-10-31)
 
 Supplementary research code for:
 
@@ -46,6 +46,12 @@ the same L = 3 toric instrument (Özgüler 2026):
    rounds, when the repair is fitted at theta (1 + eta) but the channel is
    at theta?
 
+4. Sign error. Branch undo needs the sign, and applied at the wrong sign
+   it is worse than no repair. If the sign is estimated once and used for
+   all rounds, what is the expected infidelity after 300 rounds for a given
+   probability of a wrong sign, and how many independent sentinel shots
+   does a majority vote need to reach that probability?
+
 Version 0.9.0 adds the branch-undo repair throughout: for each syndrome,
 the inverse of the nearest unitary to that branch's Kraus operator, fitted
 with the sign known. Each branch is a coherent logical rotation
@@ -84,6 +90,17 @@ returned as exact channels. Defects are evaluated with
 diamond_norm_of_difference (an upper bound) and, as a check, the
 entangled-input lower bound.
 
+Sign error (part 4): with probability q of a wrong sign, fixed for the
+whole run, the expected N-round infidelity is (1 - q) I_right + q I_wrong,
+where I_right and I_wrong are the infidelities of branch undo applied at
+the right and the wrong sign. A sentinel qubit prepared in |0>, exposed to
+the rotation and measured in the Y basis, gives the outcome indicating the
+true sign with probability (1 + sin theta) / 2 per shot. With n shots (n
+odd) and a majority vote, the probability of a wrong sign is the binomial
+tail P(X <= (n - 1) / 2), X ~ Binomial(n, (1 + sin theta) / 2). Shots are
+assumed independent, the sign is assumed the same on the sentinel and the
+memory, and drift is not modelled.
+
 Run
 ---
     python infidelity_and_calibration_check.py
@@ -110,7 +127,7 @@ from prop52_numerical_check import (SOLVER, SOLVER_FLAGS, adjoint_map, choi,
                                     fitted_unitary_decoder, identity_choi,
                                     kraus_from_choi, syndrome_classes)
 
-SCRIPT_VERSION = "0.9.0"
+SCRIPT_VERSION = "0.10.0"
 
 DIM = 4
 N2 = DIM * DIM
@@ -427,6 +444,52 @@ def report_calibration(inst, passed):
                    "infidelity stays more than 10 times below the twirl", ok_multi))
 
 
+# ---------------------------------------------------------------------------
+# Part 4: sign error
+# ---------------------------------------------------------------------------
+
+SIGN_ERROR_THETAS = (0.05, 0.1)
+SIGN_ERROR_ROUNDS = 300
+SIGN_ERROR_PROBS = (0.05, 0.01, 0.001)
+
+
+def sentinel_shots(theta, q_wrong):
+    """Smallest odd n for which a majority vote over n sentinel shots gives the
+    wrong sign with probability at most q_wrong."""
+    from scipy.stats import binom
+    p = (1 + np.sin(theta)) / 2
+    n = 1
+    while binom.cdf((n - 1) // 2, n, p) > q_wrong:
+        n += 2
+    return n
+
+
+def report_sign_error(inst, passed):
+    print(f"\n=== 4. Sign error: branch undo with the sign estimated once, {SIGN_ERROR_ROUNDS} rounds ===")
+    ok = True
+    N = SIGN_ERROR_ROUNDS
+    for theta in SIGN_ERROR_THETAS:
+        kp, km, _ = class_data(inst, theta)
+        undo = branch_undo_policy(kp)
+        right = 1 - ent_fidelity_superop(np.linalg.matrix_power(superop(apply_policy(undo, kp)), N))
+        wrong = 1 - ent_fidelity_superop(np.linalg.matrix_power(superop(apply_policy(undo, km)), N))
+        twirl = 1 - ent_fidelity_superop(np.linalg.matrix_power(twirl_superop(superop(list(kp.values()))), N))
+        print(f"\n theta = {theta:.2f}: right sign {right:.4e}; wrong sign {wrong:.4e}; twirl {twirl:.4e}")
+        print("  P(wrong sign)   expected infidelity   times ideal   twirl / expected   sentinel shots")
+        for q in SIGN_ERROR_PROBS:
+            e = (1 - q) * right + q * wrong
+            print(f"  {q:<14g}  {e:.3e}             {e / right:6.1f}        {twirl / e:7.1f}            "
+                  f"{sentinel_shots(theta, q)}")
+        q_even = (twirl - right) / (wrong - right)
+        q_double = right / (wrong - right)
+        print(f"  break-even with the twirl: P(wrong sign) = {q_even:.3f} ({sentinel_shots(theta, q_even)} shots)")
+        print(f"  within a factor of 2 of the ideal: P(wrong sign) <= {q_double:.2e} "
+              f"({sentinel_shots(theta, q_double)} shots)")
+        ok &= 0 < q_even < 0.5 and q_double < q_even
+    passed.append(("sign error: break-even with the twirl at a wrong-sign probability below one half, "
+                   "and the factor-of-2 threshold stricter", ok))
+
+
 def main() -> None:
     print("=== Run configuration ===")
     print(f"script version = {SCRIPT_VERSION}")
@@ -450,6 +513,7 @@ def main() -> None:
     report_infidelity(inst, passed)
     report_accumulation(inst, passed)
     report_calibration(inst, passed)
+    report_sign_error(inst, passed)
 
     print("\n=== Summary ===")
     for label, ok in passed:
