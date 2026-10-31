@@ -3,7 +3,8 @@
 # for prop52_numerical_check.py).
 numpy>=1.20
 # CVXPY (with its default Clarabel solver) and SciPy (installed with CVXPY):
-# prop52_numerical_check.py and two_round_repair_check.py only.
+# prop52_numerical_check.py, two_round_repair_check.py and
+# infidelity_and_calibration_check.py only.
 cvxpy>=1.4
 # Stim and PyMatching: audit_checks.py only.
 stim

@@ -2,6 +2,22 @@
 
 All notable changes to this repository are recorded here.
 
+## 0.8.0 — 2026-10-31
+
+Adds an infidelity, accumulation and calibration-error analysis of the repair comparison, for the technical companion. All earlier scripts and their reference outputs are unchanged and keep their versions (0.6.1 and 0.7.0).
+
+### `infidelity_and_calibration_check.py` (new)
+
+- One round: the four optimal repairs recomputed with entanglement infidelity as the objective, at θ = 0.05, 0.1, 0.2 and 0.3, as brackets (achieved infidelity of exact repair channels, or of no repair if better; dual bound made exactly feasible, with equal weights over the two signs).
+- Accumulation: infidelity after 1 to 300 rounds with a repair every round, for no repair, a unitary fitted at the right and the wrong sign, diamond-optimal history-used repairs with the sign known and for both signs, and an idealised logical Pauli twirl of the unrepaired channel.
+- Calibration error: repairs fitted at θ(1 + η) applied at θ, for η = 0, ±0.001, ±0.01 and 0.1.
+- Reference-run findings: the sign-blind optimum is 13 to 32 times the known-sign one by one-round infidelity (more than 370 times by diamond norm at θ = 0.05); against the twirl, the best sign-blind policy computed, the known-sign history-used repair is 15 times better at θ = 0.05 and 35 times at θ = 0.1 at every N; a 1 per cent calibration error leaves the diamond-norm advantage essentially unchanged, a 10 per cent error reduces it to 62-fold (θ = 0.05) and 26-fold (θ = 0.1).
+- During development, a summary check written before the first run expected unrepaired infidelity to grow by more than a factor of 30 from 10 to 100 rounds. It grew by 12 and 17. The check was replaced by one comparing unrepaired growth with the twirled channel's. The first run also reported the known-sign repair against the diamond-optimal sign-blind repair alone, whose infidelity exceeds that of no repair; the ratio is now taken against the best of all sign-blind policies computed. The script's output explains both.
+
+### Repository
+
+- `README.md`, `CITATION.cff`, `.zenodo.json` and `requirements.txt` updated; new reference output `output/infidelity_and_calibration_check_output.txt`.
+
 ## 0.7.0 — 2026-10-31
 
 Adds a two-round extension of the repair comparison, for the technical companion 'Sign-Blind Recovery, Record Leakage and Model Misspecification in Quantum Error Correction: Worked Numerical Cases'. The five existing scripts and their reference outputs are unchanged and keep version 0.6.1, so every figure in Version 1.0 of the paper is reproduced by this release as by 0.6.1.

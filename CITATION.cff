@@ -7,7 +7,7 @@ authors:
     given-names: "Peter"
     affiliation: "Independent researcher, Lex et Ratio"
     orcid: "https://orcid.org/0009-0003-1616-4843"
-version: "0.7.0"
+version: "0.8.0"
 date-released: "2026-10-31"
 repository-code: "https://github.com/Peter-Kahl/blind-by-design-qec"
 url: "https://www.lexetratio.com"
@@ -17,7 +17,7 @@ abstract: >-
   Functional Incompatibility and the Value of Evidence' (Lex et Ratio Working
   Paper LXR-2026-PHI-BBDQEC-WP) and to its technical companion, 'Sign-Blind
   Recovery, Record Leakage and Model Misspecification in Quantum Error
-  Correction: Worked Numerical Cases'. Six scripts: a numerical check of
+  Correction: Worked Numerical Cases'. Seven scripts: a numerical check of
   Proposition 5.2, which bounds what the classical record of an approximately
   function-preserving inquiry can reveal about an encoded quantum state; a
   three-qubit repetition-code
@@ -28,7 +28,9 @@ abstract: >-
   misspecified detector efficiency is detected and repaired from the records
   already held; and a two-round extension of the comparison between repairs
   that know the sign of a coherent rotation and repairs that must serve both
-  signs. Includes reference outputs and a reliance note.
+  signs; and an analysis of that comparison by entanglement infidelity, over
+  up to 300 rounds against an idealised twirl, and under calibration error.
+  Includes reference outputs and a reliance note.
 keywords:
   - "quantum error correction"
   - "functional incompatibility"
