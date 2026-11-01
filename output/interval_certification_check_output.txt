@@ -1,5 +1,5 @@
 === Run configuration ===
-script version = 0.12.0
+script version = 0.12.1
 Python version = 3.12.3
 NumPy version = 2.4.4
 mpmath version = 1.3.0; interval precision = 40 decimal digits
@@ -12,20 +12,20 @@ certificates saved to output/interval_certificates.json
 === theta = 0.05 ===
  exact branch formula vs state-vector instrument: max difference 2.1e-15
  infidelity, no repair     in [7.26443459156e-6, 7.26443459156e-6]
- infidelity, branch undo   in [4.2210043824e-8, 4.2210043824e-8]
+ infidelity, branch undo   in [4.2210043824e-8, 4.2210043824e-8]   (the exact optimum with the sign known; companion, Appendix B.4)
  diamond defect, branch undo        <= 8.4498261e-8   (certificate verified)
- diamond defect, sign-blind (any syndrome-dependent repair) >= 0.000360796   (float primal 3.727241e-04; certificate verified)
+ diamond defect, sign-blind (any syndrome-dependent repair) >= 0.0003608043   (float primal 3.727241e-04; certificate verified)
  infidelity, sign-blind (any syndrome-dependent repair, worse sign) >= 7.1780992e-6   (certificate verified)
- certified ratios: diamond >= 4269.86; infidelity >= 170.057   (43 s)
+ certified ratios: diamond >= 4269.96; infidelity >= 170.057   (49 s)
 
 === theta = 0.1 ===
  exact branch formula vs state-vector instrument: max difference 2.6e-15
  infidelity, no repair     in [0.000126924191172, 0.000126924191172]
- infidelity, branch undo   in [2.48724196096e-6, 2.48724196096e-6]
+ infidelity, branch undo   in [2.48724196096e-6, 2.48724196096e-6]   (the exact optimum with the sign known; companion, Appendix B.4)
  diamond defect, branch undo        <= 4.974538e-6   (certificate verified)
- diamond defect, sign-blind (any syndrome-dependent repair) >= 0.0029191751   (float primal 2.926065e-03; certificate verified)
+ diamond defect, sign-blind (any syndrome-dependent repair) >= 0.0029191554   (float primal 2.926065e-03; certificate verified)
  infidelity, sign-blind (any syndrome-dependent repair, worse sign) >= 0.00012629093   (certificate verified)
- certified ratios: diamond >= 586.823; infidelity >= 50.7755   (43 s)
+ certified ratios: diamond >= 586.819; infidelity >= 50.7755   (48 s)
 
 === Summary ===
 PASS  theta = 0.05: branch formula reproduces the instrument (to 1e-12)

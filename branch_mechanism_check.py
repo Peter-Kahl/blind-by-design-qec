@@ -5,7 +5,7 @@ branch_mechanism_check.py
 =========================
 
 Version:
-    0.9.0 (2026-10-31)
+    0.12.1 (2026-11-01)
 
 Supplementary research code for:
 
@@ -41,10 +41,13 @@ correction. The script checks and reports:
 2. whether the branch at -theta is the complex conjugate of the branch at
    +theta (so the two signs rotate the logical state in opposite
    directions);
-3. the logical rotation angle of the branch, taken as the spread of the
+3. how many branches are far from proportional to a unitary (relative
+   singular-value spread above 0.5), with their total probability and share
+   of infidelity;
+4. the logical rotation angle of the branch, taken as the spread of the
    eigenphases of its nearest unitary (for exp(-i phi P / 2) with P a
    Pauli operator, the spread is phi); and
-4. the branch's exact contribution to one-round entanglement infidelity.
+5. the branch's exact contribution to one-round entanglement infidelity.
 
 The decomposition is exact: for a channel with Kraus operators K_s on
 dimension d, entanglement infidelity is sum_s (p_s - |tr K_s|^2 / d^2), with
@@ -98,13 +101,14 @@ from prop52_numerical_check import (choi, diamond_norm_of_difference,
                                     identity_choi, syndrome_classes)
 from two_round_repair_check import two_round_classes
 
-SCRIPT_VERSION = "0.9.0"
+SCRIPT_VERSION = "0.12.1"
 
 THETAS = (0.05, 0.1)
 DIAMOND_THETAS = (0.05, 0.1, 0.2, 0.3)
 TWO_ROUND_THETAS = (0.05, 0.1)
 DIM = 4
 TOLERANCE = 1e-12
+FAR_FROM_UNITARY = 0.5     # relative singular-value spread above which a branch is far from unitary
 ROWS_SHOWN = 6
 
 
@@ -138,9 +142,15 @@ def report(theta, inst, passed):
     classes = syndrome_classes(kp, km)
     rows = []
     totals = np.zeros(3)
+    far = [0, 0.0, 0.0]          # branches far from unitary: count, probability, infidelity
     worst_conj, worst_spread_rare = 0.0, 0.0
     for c in classes:
         data = [branch_data(kp[s], km[s]) for s in c]
+        for d in data:
+            if d[1] > FAR_FROM_UNITARY:
+                far[0] += 1
+                far[1] += d[0]
+                far[2] += d[4]
         p = sum(d[0] for d in data)
         contribution = sum(d[4] for d in data)
         undone = sum(d[5] for d in data)
@@ -164,6 +174,8 @@ def report(theta, inst, passed):
     angles = [r[2] for r in rare[:ROWS_SHOWN]]
     print(f" next classes: rotation angles {min(angles):.4f} to {max(angles):.4f} (theta = {theta})")
     print(f" largest |K(-theta) - conj K(+theta)| over all syndromes: {worst_conj:.1e}")
+    print(f" branches whose singular values differ by more than {FAR_FROM_UNITARY:g} of the largest: {far[0]}, "
+          f"total probability {far[1]:.2e}, share of infidelity {100 * far[2] / infidelity:.2f} per cent")
     print(" One-round entanglement infidelity:")
     print(f"  no repair                                         {infidelity:.4e}")
     print(f"  each branch's rotation undone, sign known         {totals[1]:.4e}   "

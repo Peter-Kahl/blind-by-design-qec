@@ -1,5 +1,5 @@
 === Run configuration ===
-script version = 0.9.0
+script version = 0.12.1
 Python version = 3.12.3
 NumPy version = 2.4.4
 thetas = (0.05, 0.1)
@@ -17,6 +17,7 @@ infidelity = 1 - entanglement fidelity; decomposition sum_s (p_s - |tr K_s|^2 / 
  most probable class: probability 0.9888, rotation angle 1.87e-04 (theta^3 = 1.25e-04), share of infidelity 0.1 per cent
  next classes: rotation angles 0.0500 to 0.1997 (theta = 0.05)
  largest |K(-theta) - conj K(+theta)| over all syndromes: 0.0e+00
+ branches whose singular values differ by more than 0.5 of the largest: 87, total probability 9.01e-08, share of infidelity 0.63 per cent
  One-round entanglement infidelity:
   no repair                                         7.2644e-06
   each branch's rotation undone, sign known         4.2210e-08   (99.4 per cent removed)
@@ -34,6 +35,7 @@ infidelity = 1 - entanglement fidelity; decomposition sum_s (p_s - |tr K_s|^2 / 
  most probable class: probability 0.9561, rotation angle 1.48e-03 (theta^3 = 1.00e-03), share of infidelity 0.2 per cent
  next classes: rotation angles 0.1003 to 0.3980 (theta = 0.1)
  largest |K(-theta) - conj K(+theta)| over all syndromes: 0.0e+00
+ branches whose singular values differ by more than 0.5 of the largest: 87, total probability 5.64e-06, share of infidelity 2.34 per cent
  One-round entanglement infidelity:
   no repair                                         1.2692e-04
   each branch's rotation undone, sign known         2.4872e-06   (98.0 per cent removed)

@@ -2,6 +2,25 @@
 
 All notable changes to this repository are recorded here.
 
+## 0.12.1 — 2026-11-01
+
+Tightens the certification and adds branch statistics, prompted by a third external audit of the companion note. The other scripts and their reference outputs are unchanged.
+
+### `interval_certification_check.py` (0.12.0 → 0.12.1)
+
+- Every certificate matrix is now defined as the exactly Hermitian matrix given by its upper triangle (`hermitian_from_upper`), both when proposed and when loaded, and all checks and objective values are computed from it. In 0.12.0 the positive-definiteness checks used the upper triangle while the dual objective also read the lower triangle of the stored matrices; the stored matrices departed from exact Hermiticity by at most 2.8 × 10⁻¹⁷. The archived certificates now satisfy it exactly.
+- The script exits with status 1 if any check fails (tested with a deliberately corrupted certificate).
+- The output labels the branch-undo infidelity as the exact one-round optimum with the sign known (companion, Appendix B.4).
+- Certificates regenerated. The certified sign-blind diamond lower bounds changed in the fifth significant figure (3.608043 × 10⁻⁴ and 2.9191554 × 10⁻³; previously 3.60796 × 10⁻⁴ and 2.9191751 × 10⁻³), giving certified ratios of at least 4,269.96 and 586.819; the infidelity bounds are unchanged.
+
+### `branch_mechanism_check.py` (0.9.0 → 0.12.1)
+
+- Reports the branches far from proportional to a unitary (singular values differing by more than half the largest): 87 branches at both angles, with total probability 9.0 × 10⁻⁸ and 0.63 per cent of one-round infidelity at θ = 0.05, and 5.6 × 10⁻⁶ and 2.34 per cent at θ = 0.1. Other output unchanged.
+
+### Repository
+
+- `README.md` describes only the dominant branches as nearly unitary, matching the companion; `CITATION.cff` and `.zenodo.json` updated.
+
 ## 0.12.0 — 2026-10-31
 
 Makes the interval certification independently checkable. Prompted by a second external audit of the companion note. Other scripts and their reference outputs are unchanged.

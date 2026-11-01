@@ -5,7 +5,7 @@ interval_certification_check.py
 ===============================
 
 Version:
-    0.12.0 (2026-10-31)
+    0.12.1 (2026-11-01)
 
 Supplementary research code for:
 
@@ -116,7 +116,11 @@ certificates, which are shifted until interval arithmetic verifies them,
 and saved to output/interval_certificates.json.
 
 Verify (needs only NumPy and mpmath): the saved certificates are loaded and
-every bound is proved from them in interval arithmetic. The derivations are
+every bound is proved from them in interval arithmetic. Every certificate
+matrix is defined as the exactly Hermitian matrix given by its upper
+triangle (hermitian_from_upper), when proposed and when loaded, and all
+checks and objective values are computed from it. The script exits with
+status 1 if any check fails. The derivations are
 given in Appendix B of the companion note.
 
 Run
@@ -135,6 +139,7 @@ import argparse
 import json
 import os
 import platform
+import sys
 import time
 import warnings
 
@@ -144,7 +149,7 @@ from mpmath import iv
 
 from ozguler_prop1_check import build_instrument, kraus_operators, mask_of
 
-SCRIPT_VERSION = "0.12.0"
+SCRIPT_VERSION = "0.12.1"
 THETAS = ("0.05", "0.1")
 DIM = 4
 N2 = DIM * DIM
@@ -343,13 +348,28 @@ def conj_scale(W, lam_list, weights):
 # Serialisation of certificates (exact binary floats, round-tripped by JSON)
 # ---------------------------------------------------------------------------
 
-def enc(X):
+def hermitian_from_upper(X):
+    """The exactly Hermitian matrix defined by the upper triangle of X: entries
+    above the diagonal are kept, those below are their exact complex
+    conjugates, and the diagonal is real. Every certificate matrix is defined
+    this way, when proposed and when loaded, and all later calculations use it."""
     X = np.asarray(X, dtype=complex)
+    n = X.shape[0]
+    H = np.zeros((n, n), dtype=complex)
+    iu = np.triu_indices(n, 1)
+    H[iu] = X[iu]
+    H[(iu[1], iu[0])] = np.conj(X[iu])
+    H[np.diag_indices(n)] = X.real[np.diag_indices(n)]
+    return H
+
+
+def enc(X):
+    X = hermitian_from_upper(X)
     return {"re": X.real.tolist(), "im": X.imag.tolist()}
 
 
 def dec(d):
-    return np.array(d["re"], dtype=float) + 1j * np.array(d["im"], dtype=float)
+    return hermitian_from_upper(np.array(d["re"], dtype=float) + 1j * np.array(d["im"], dtype=float))
 
 
 # ---------------------------------------------------------------------------
@@ -446,7 +466,7 @@ def propose(theta_str, N, inst):
     for attempt in range(10):
         shift = scale * SHIFT * 10 ** attempt + max(0.0, -np.linalg.eigvalsh(Ztv - Wm_f).min(),
                                                     -np.linalg.eigvalsh(Ztv).min())
-        Zc = Ztv + shift * np.eye(DIM)
+        Zc = hermitian_from_upper(Ztv + shift * np.eye(DIM)).real
         if check_upper(Zc, Wm):
             break
     cert["Z"] = enc(Zc)
@@ -485,6 +505,8 @@ def propose(theta_str, N, inst):
     Wc = [Wp + a * np.eye(N2) for Wp in W]
     Rc = [Rp + (max(0.0, -np.linalg.eigvalsh(np.kron(Rp, np.eye(DIM)) - Wp).min()) + SHIFT * np.abs(Rp).max() + a)
           * np.eye(DIM) for Wp, Rp in zip(Wc, R)]
+    Wc = [hermitian_from_upper(Wp) for Wp in Wc]
+    Rc = [hermitian_from_upper(Rp) for Rp in Rc]
     cert["W"] = [enc(Wp) for Wp in Wc]
     cert["rho"] = [enc(Rp) for Rp in Rc]
     _, Wi, _ = check_W_rho(Wc, Rc)
@@ -496,7 +518,7 @@ def propose(theta_str, N, inst):
         for attempt in range(10):
             c = max(0.0, -np.linalg.eigvalsh(Hf - np.kron(Yf, np.eye(DIM))).min()) + \
                 SHIFT * 10 ** attempt * max(1e-30, np.abs(Hf).max())
-            Yc = Yf - c * np.eye(DIM)
+            Yc = hermitian_from_upper(Yf - c * np.eye(DIM))
             if check_Y_below(Hi, Yc):
                 break
         Yd[str(s)] = enc(Yc)
@@ -513,7 +535,7 @@ def propose(theta_str, N, inst):
         for attempt in range(10):
             c = max(0.0, -np.linalg.eigvalsh(np.kron(Yf, np.eye(DIM)) - Hf).min()) + \
                 SHIFT * 10 ** attempt * max(1e-30, np.abs(Hf).max())
-            Yc = Yf + c * np.eye(DIM)
+            Yc = hermitian_from_upper(Yf + c * np.eye(DIM))
             if check_Y_above(Hi, Yc):
                 break
         Yi_[str(s)] = enc(Yc)
@@ -545,7 +567,8 @@ def verify(cert, N, inst, passed):
                   (sum((lam[s][k][1] for k in range(DIM)), iv.mpf(0))) ** 2 for s in sigmas), iv.mpf(0)) / 16
     inf_undo, inf_none = 1 - F_undo, 1 - F_none
     print(f" infidelity, no repair     in [{lo(inf_none, 12)}, {hi(inf_none, 12)}]")
-    print(f" infidelity, branch undo   in [{lo(inf_undo, 12)}, {hi(inf_undo, 12)}]")
+    print(f" infidelity, branch undo   in [{lo(inf_undo, 12)}, {hi(inf_undo, 12)}]"
+          "   (the exact optimum with the sign known; companion, Appendix B.4)")
 
     # B.1
     Zc = dec(cert["Z"]).real
@@ -635,6 +658,9 @@ def main() -> None:
         print(f"{'PASS' if ok else 'FAIL'}  {label}")
     print("Certified bounds are proved by interval arithmetic from the saved certificates; "
           "the floating-point solver only proposes them.")
+    if not all(ok for _, ok in passed):
+        print("At least one check FAILED.")
+        sys.exit(1)
 
 
 if __name__ == "__main__":
