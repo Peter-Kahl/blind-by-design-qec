@@ -2,6 +2,15 @@
 
 All notable changes to this repository are recorded here.
 
+## 0.12.3 — 2026-11-01
+
+Documentation only, prompted by a fifth external audit of the companion note. No script, and no reference output, is changed.
+
+### Repository
+
+- `README.md`: the script table described `branch_mechanism_check.py` as showing that 'each syndrome branch is a coherent logical rotation'. It now says the dominant branches are nearly coherent logical rotations, matching the later README section, the companion note and the script's own output, which reports 87 branches far from unitary. This table entry was missed in 0.12.1.
+- `CITATION.cff` and `.zenodo.json`: version 0.12.3.
+
 ## 0.12.2 — 2026-11-01
 
 Documentation and metadata only, prompted by a fourth external audit of the companion note. No script, and no reference output, is changed.
