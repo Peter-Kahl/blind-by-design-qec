@@ -2,6 +2,16 @@
 
 All notable changes to this repository are recorded here.
 
+## 0.12.2 — 2026-11-01
+
+Documentation and metadata only, prompted by a fourth external audit of the companion note. No script, and no reference output, is changed.
+
+### Repository
+
+- `README.md` now says four further scripts extend the paper's computations for the technical companion (previously 'three'; `interval_certification_check.py`, added in 0.11.0, was not counted), and states the imports correctly: `interval_certification_check.py` imports `ozguler_prop1_check.py` only.
+- `CITATION.cff` and `.zenodo.json` describe nine scripts (previously 'Eight').
+- `CITATION.cff` release date corrected; version 0.12.1 had carried the date of 0.12.0.
+
 ## 0.12.1 — 2026-11-01
 
 Tightens the certification and adds branch statistics, prompted by a third external audit of the companion note. The other scripts and their reference outputs are unchanged.
